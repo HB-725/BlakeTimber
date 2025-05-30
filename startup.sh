@@ -1,16 +1,21 @@
 #!/bin/bash
 
-# Navigate to the Django project directory
-cd timber_locator
-
-# Install dependencies
+# Install dependencies from the root requirements.txt
+# This ensures gunicorn and other necessary packages are available for the startup script
+echo "Installing dependencies from root requirements.txt..."
 pip install -r requirements.txt
 
-# Collect static files
-python manage.py collectstatic --noinput --settings=timber_locator.production_settings
+# Navigate to the Django project directory where manage.py is located
+echo "Changing to timber_locator directory..."
+cd timber_locator
 
-# Run database migrations
+# Run Django management commands
+echo "Collecting static files..."
+python manage.py collectstatic --noinput --settings=timber_locator.production_settings
+echo "Applying database migrations..."
 python manage.py migrate --settings=timber_locator.production_settings
 
 # Start Gunicorn
-gunicorn --bind 0.0.0.0:8000 --workers 4 timber_locator.wsgi:application --env DJANGO_SETTINGS_MODULE=timber_locator.production_settings
+# Azure App Service will set the PORT environment variable
+echo "Starting Gunicorn on 0.0.0.0:$PORT..."
+gunicorn timber_locator.wsgi:application --bind 0.0.0.0:$PORT --workers 4 --env DJANGO_SETTINGS_MODULE=timber_locator.production_settings --timeout 120
