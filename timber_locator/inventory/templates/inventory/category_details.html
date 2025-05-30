@@ -1,0 +1,53 @@
+{% extends "inventory/base.html" %}
+
+{% block breadcrumb %}
+{% if object.parent %}
+  <li class="breadcrumb-item"><a href="{% url 'category-detail' object.parent.slug %}">{{ object.parent.name }}</a></li>
+{% endif %}
+<li class="breadcrumb-item active">{{ object.name }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-2 py-3">
+  <div class="row g-3">
+    {% for child in children %}
+    <div class="col-6">
+      <a href="{% url 'category-detail' child.slug %}" class="text-decoration-none">
+        <div class="card h-100">
+          <div class="image-wrapper">
+            {% if child.image_url %}
+              <img src="{{ child.image_url }}" class="card-img-top" alt="{{ child.name }}" loading="lazy">
+            {% else %}
+              <div class="placeholder-image"></div>
+            {% endif %}
+          </div>
+          <div class="card-body p-3">
+            <h6 class="card-title text-dark mb-0">{{ child.name }}</h6>
+          </div>
+        </div>
+      </a>
+    </div>
+    {% endfor %}
+    
+    {% for profile in profiles %}
+    <div class="col-6">
+      <a href="{% url 'profile-detail' profile.pk %}" class="text-decoration-none">
+        <div class="card h-100">
+          <div class="image-wrapper">
+            {% if profile.image_url %}
+              <img src="{{ profile.image_url }}" class="card-img-top" alt="{{ profile.name }}" loading="lazy">
+            {% else %}
+              <div class="placeholder-image"></div>
+            {% endif %}
+          </div>
+          <div class="card-body p-3">
+            <h6 class="card-title text-dark mb-0">{{ profile.name }}</h6>
+          </div>
+        </div>
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+  

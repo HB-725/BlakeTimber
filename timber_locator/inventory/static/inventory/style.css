@@ -1,0 +1,57 @@
+/* static/inventory/style.css */
+
+:root {
+    --brand-primary: #0a5f5f;
+    --brand-light:   #f8f9fa;
+}
+  
+body {
+    background: var(--brand-light);
+    font-family: 'Inter', sans-serif;
+    color: #333;
+}
+  
+.btn-primary {
+    background: var(--brand-primary);
+    border-color: var(--brand-primary);
+}
+  
+.card {
+    border-radius: .75rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: none;
+}
+  
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+}
+  
+.image-wrapper {
+    position: relative;
+    width: 100%;
+    padding-top: 100%; /* Creates 1:1 aspect ratio */
+    overflow: hidden;
+    border-top-left-radius: .75rem;
+    border-top-right-radius: .75rem;
+}
+  
+.card-img-top {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+  
+.placeholder-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #e9ecef;
+}
+  

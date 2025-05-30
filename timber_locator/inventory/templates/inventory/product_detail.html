@@ -1,0 +1,96 @@
+<!-- templates/inventory/product_detail.html -->
+{% extends "inventory/base.html" %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'category-detail' object.profile.category.slug %}">{{ object.profile.category.name }}</a></li>
+<li class="breadcrumb-item"><a href="{% url 'profile-detail' object.profile.pk %}">{{ object.profile.name }}</a></li>
+<li class="breadcrumb-item active">{{ object.length }} m</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-2 py-3">
+  <div class="card">
+    <div class="card-body">
+      <!-- Product Image -->
+      {% if object.image_url %}
+      <div class="image-wrapper rounded mb-4" style="padding-top: 75%;">
+        <img src="{{ object.image_url }}" class="card-img-top" alt="{{ object.profile.name }} - {{ object.length }}m" style="object-fit: contain;">
+      </div>
+      {% endif %}
+
+      <!-- Product Details -->
+      <h6 class="card-title mb-4">{{ object.profile.category.name }} - {{ object.profile.name }} – {{ object.length }} m</h6>
+      <div class="row mb-4">
+        <div class="col-md-6">
+          <ul class="list-unstyled">
+            <li class="mb-2"><strong>I/N Number:</strong> {{ object.in_number }}</li>
+            <li class="mb-2"><strong>Price:</strong> ${{ object.price }}</li>
+            <li class="mb-2"><strong>Location:</strong> {{ object.location }}</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Barcode -->
+      <div class="barcode-container mb-4">
+        {{ object.barcode_svg|safe }}
+      </div>
+
+      <!-- Length Options -->
+      {% if all_lengths %}
+      <div class="card mt-4">
+        <div class="card-body">
+          <h6 class="card-title mb-3">Options:</h6>
+          <div class="row g-2">
+            {% for product in all_lengths %}
+              <div class="col-3">
+                {% if product.id == object.id %}
+                  <a href="#" class="btn btn-outline-dark w-100 current-length" onclick="return false;">
+                    {{ product.length }}m
+                  </a>
+                {% else %}
+                  <a href="{% url 'product-detail' product.id %}" 
+                     class="btn btn-outline-dark w-100">
+                    {{ product.length }}m
+                  </a>
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<style>
+.barcode-container {
+  width: 100%;
+  max-width: 200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  padding: 0.5rem;
+  background: white;
+  border-radius: 0.5rem;
+}
+.barcode-container img {
+  max-width: 100%;
+  height: auto;
+}
+.btn {
+  font-size: 0.9rem;
+  padding: 0.25rem 0.5rem;
+  border-width: 1px;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  text-align: center;
+}
+.current-length {
+  border-width: 2px !important;
+  cursor: default;
+}
+</style>
+{% endblock %}
