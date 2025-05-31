@@ -3,7 +3,8 @@
 
 {% block breadcrumb %}
 <li class="breadcrumb-item"><a href="{% url 'category-detail' object.profile.category.slug %}">{{ object.profile.category.name }}</a></li>
-<li class="breadcrumb-item active">{{ object.profile.name }}{% if object.get_dimension_display %} - {{ object.get_dimension_display }}{% endif %}</li>
+<li class="breadcrumb-item"><a href="{% url 'profile-detail' object.profile.pk %}">{{ object.profile.name }}</a></li>
+<li class="breadcrumb-item active">{{ object.get_dimension_display }}</li>
 {% endblock %}
 
 {% block content %}
@@ -12,8 +13,8 @@
     <div class="card-body">
       <!-- Product Image -->
       {% if object.get_display_image %}
-      <div class="image-wrapper rounded mb-4 product-image-wrapper">
-        <img src="{{ object.get_display_image }}" class="card-img-top product-image" alt="{{ object.profile.name }} - {{ object.get_dimension_display }}">
+      <div class="image-wrapper rounded mb-4" style="padding-top: 75%;">
+        <img src="{{ object.get_display_image }}" class="card-img-top" alt="{{ object.profile.name }} - {{ object.get_dimension_display }}" style="object-fit: contain;">
       </div>
       {% endif %}
 
@@ -33,20 +34,18 @@
       {% if all_products and all_products.count > 1 %}
       <div class="mb-4">
         <h6 class="mb-3">Available Options:</h6>
-        <div class="row g-2">
+        <div class="options-container">
           {% for product in all_products %}
-            <div class="col-2-4">
-              {% if product.id == object.id %}
-                <a href="#" class="btn btn-outline-dark w-100 current-length" onclick="return false;">
-                  {{ product.get_dimension_display }}
-                </a>
-              {% else %}
-                <a href="{% url 'product-detail' product.id %}" 
-                   class="btn btn-outline-dark w-100">
-                  {{ product.get_dimension_display }}
-                </a>
-              {% endif %}
-            </div>
+            {% if product.id == object.id %}
+              <a href="#" class="btn btn-outline-dark current-length" onclick="return false;">
+                {{ product.get_dimension_display }}
+              </a>
+            {% else %}
+              <a href="{% url 'product-detail' product.id %}" 
+                 class="btn btn-outline-dark">
+                {{ product.get_dimension_display }}
+              </a>
+            {% endif %}
           {% endfor %}
         </div>
       </div>
@@ -59,4 +58,55 @@
     </div>
   </div>
 </div>
+
+<style>
+.barcode-container {
+  width: 100%;
+  max-width: 200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  padding: 0.5rem;
+  background: white;
+  border-radius: 0.5rem;
+}
+.barcode-container img {
+  max-width: 100%;
+  height: auto;
+}
+.btn {
+  font-size: 0.9rem;
+  padding: 0.25rem 0.5rem;
+  border-width: 1px;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  text-align: center;
+}
+.current-length {
+  background-color: #212529 !important;
+  color: white !important;
+  border-width: 2px !important;
+  border-color: #212529 !important;
+  cursor: default;
+  font-weight: bold;
+}
+.options-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+.options-container .btn {
+  min-width: 60px;
+  max-width: 100px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 0 0 auto;
+}
+</style>
 {% endblock %}
