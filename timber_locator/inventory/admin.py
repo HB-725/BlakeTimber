@@ -132,12 +132,12 @@ class ProfileAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('in_number', 'get_product_name', 'get_dimension_display', 'price', 'location', 'has_image', 'get_category')
+    list_display = ('in_number', 'get_product_name', 'option', 'price', 'location', 'has_image', 'get_category')
     list_filter = ('category', 'profile__category', 'profile', 'location', ProductPriceRangeFilter)
     search_fields = ('in_number', 'profile__name', 'category__name', 'profile__category__name', 'location', 'option')
     ordering = ('category', 'profile__category', 'profile__name', 'option')
     list_per_page = 50
-    list_editable = ('price', 'location')
+    list_editable = ('option', 'price', 'location')
     
     fieldsets = (
         ('Basic Information', {

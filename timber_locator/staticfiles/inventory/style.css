@@ -109,13 +109,10 @@ body {
 }
 
 .options-container .btn {
-    min-width: 60px;
-    max-width: 100px;
-    padding: 0.25rem 0.5rem;
+    padding: 0.25rem 0.75rem;
     font-size: 0.85rem;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
     flex: 0 0 auto;
+    min-width: fit-content;
 }
   
