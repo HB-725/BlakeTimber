@@ -15,6 +15,10 @@ class ProfileAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display   = ('in_number', 'profile', 'length', 'price', 'location')
+    list_display   = ('in_number', 'profile', 'get_dimension_display', 'price', 'location')
     list_filter    = ('profile__category',)
     search_fields  = ('in_number', 'profile__name')
+    
+    def get_dimension_display(self, obj):
+        return obj.get_dimension_display()
+    get_dimension_display.short_description = 'Dimensions'

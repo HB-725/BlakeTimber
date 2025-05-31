@@ -52,7 +52,7 @@ class ProductDetail(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # Get all products with the same profile, including current product
-        context['all_lengths'] = Product.objects.filter(
+        context['all_products'] = Product.objects.filter(
             profile=self.object.profile
-        ).order_by('length')
+        ).order_by('length', 'size')
         return context

@@ -46,14 +46,38 @@ class Profile(models.Model):
 
 class Product(models.Model):
     profile   = models.ForeignKey(Profile, on_delete=models.CASCADE)
-    length    = models.DecimalField(max_digits=4, decimal_places=1, help_text="Length in meters")
+    length    = models.DecimalField(max_digits=4, decimal_places=1, help_text="Length in meters", blank=True, null=True)
+    size      = models.CharField(max_length=100, help_text="Size dimensions (e.g., '2400x1200mm', '4x8 feet')", blank=True, null=True)
     in_number = models.CharField("I/N Number", max_length=50, unique=True)
     price     = models.DecimalField(max_digits=8, decimal_places=2)
     location  = models.CharField(max_length=100, blank=True, null=True)
     image_url = models.URLField("Image URL", max_length=500, blank=True, null=True)
 
     def __str__(self):
-        return f"{self.profile.name} – {self.length} m"
+        if self.length:
+            return f"{self.profile.name} – {self.length} m"
+        elif self.size:
+            return f"{self.profile.name} – {self.size}"
+        else:
+            return f"{self.profile.name}"
+
+    def get_dimension_display(self):
+        """Return either length or size for display"""
+        if self.length:
+            return f"{self.length} m"
+        elif self.size:
+            return self.size
+        else:
+            return ""
+
+    def get_display_image(self):
+        """Return product image URL if available, otherwise profile image URL"""
+        if self.image_url:
+            return self.image_url
+        elif self.profile.image_url:
+            return self.profile.image_url
+        else:
+            return None
 
     def barcode_svg(self):
         # Using TEC-IT barcode service
@@ -61,4 +85,4 @@ class Product(models.Model):
         return mark_safe(f'<img src="{barcode_url}" alt="Barcode" style="width: 100%; height: auto;">')
 
     class Meta:
-        ordering = ['length']  # Sort products by length ascending
+        ordering = ['length', 'size']  # Sort products by length first, then size
