@@ -14,6 +14,8 @@ DEBUG = False
 # Azure App Service sets WEBSITE_HOSTNAME
 ALLOWED_HOSTS = [
     os.environ.get('WEBSITE_HOSTNAME', 'localhost'),
+    'www.blaketimber.com',
+    'blaketimber.com',
     'localhost',
     '127.0.0.1',
 ]
