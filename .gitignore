@@ -4,8 +4,8 @@
 *.pyc
 __pycache__/
 local_settings.py
-db.sqlite3
-*.sqlite3
+# db.sqlite3  # Commented out to allow manual database deployment
+# *.sqlite3   # Commented out to allow manual database deployment
 *.sqlite3-journal
 media/
 
