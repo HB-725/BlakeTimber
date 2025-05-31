@@ -26,7 +26,9 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'your-secret-key-here')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True  # Temporarily set to True to see detailed error pages
 
+
 ALLOWED_HOSTS = [
+    'www.blaketimber.com', 'blaketimber.com',
     'localhost',
     '127.0.0.1',
     '[::1]',
