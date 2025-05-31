@@ -59,27 +59,27 @@ class ProfileThicknessFilter(admin.SimpleListFilter):
         return queryset
 
 
-class ProductLengthFilter(admin.SimpleListFilter):
-    title = 'Length Range'
-    parameter_name = 'length_range'
+class ProductPriceRangeFilter(admin.SimpleListFilter):
+    title = 'Price Range'
+    parameter_name = 'price_range'
 
     def lookups(self, request, model_admin):
         return (
-            ('short', 'Under 3m'),
-            ('medium', '3m - 6m'),
-            ('long', 'Over 6m'),
-            ('no_length', 'No length specified'),
+            ('budget', 'Under $50'),
+            ('moderate', '$50 - $200'),
+            ('premium', '$200 - $500'),
+            ('expensive', 'Over $500'),
         )
 
     def queryset(self, request, queryset):
-        if self.value() == 'short':
-            return queryset.filter(length__lt=3, length__isnull=False)
-        if self.value() == 'medium':
-            return queryset.filter(length__gte=3, length__lte=6)
-        if self.value() == 'long':
-            return queryset.filter(length__gt=6)
-        if self.value() == 'no_length':
-            return queryset.filter(length__isnull=True)
+        if self.value() == 'budget':
+            return queryset.filter(price__lt=50)
+        if self.value() == 'moderate':
+            return queryset.filter(price__gte=50, price__lte=200)
+        if self.value() == 'premium':
+            return queryset.filter(price__gte=200, price__lte=500)
+        if self.value() == 'expensive':
+            return queryset.filter(price__gt=500)
 
 @admin.register(Category)
 class CategoryAdmin(DraggableMPTTAdmin):
@@ -121,27 +121,35 @@ class ProfileAdmin(admin.ModelAdmin):
     get_product_count.short_description = 'Products Count'
     
     def has_image(self, obj):
+        """Show image source with fallback to category"""
         if obj.image_url:
-            return format_html('<span style="color: green;">✓ Yes</span>')
-        return format_html('<span style="color: red;">✗ No</span>')
-    has_image.short_description = 'Has Image'
+            return format_html('<span style="color: green;">✓ Profile</span>')
+        elif obj.category and obj.category.image_url:
+            return format_html('<span style="color: orange;">✓ Category</span>')
+        else:
+            return format_html('<span style="color: red;">✗ None</span>')
+    has_image.short_description = 'Image Source'
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('in_number', 'profile', 'get_dimension_display', 'price', 'location', 'has_image', 'get_category')
-    list_filter = ('profile__category', 'profile', ProductLengthFilter, 'location')
-    search_fields = ('in_number', 'profile__name', 'profile__category__name', 'location')
-    ordering = ('profile__category', 'profile__name', 'length', 'size')
+    list_display = ('in_number', 'get_product_name', 'get_dimension_display', 'price', 'location', 'has_image', 'get_category')
+    list_filter = ('category', 'profile__category', 'profile', 'location', ProductPriceRangeFilter)
+    search_fields = ('in_number', 'profile__name', 'category__name', 'profile__category__name', 'location', 'option')
+    ordering = ('category', 'profile__category', 'profile__name', 'option')
     list_per_page = 50
     list_editable = ('price', 'location')
     
     fieldsets = (
         ('Basic Information', {
-            'fields': ('profile', 'in_number')
+            'fields': ('in_number',),
         }),
-        ('Dimensions', {
-            'fields': ('length', 'size'),
-            'description': 'Specify either length (for lumber) or size (for sheets/panels)'
+        ('Product Classification', {
+            'fields': ('category', 'profile'),
+            'description': 'Choose either a category (for direct products) OR a profile (for profile-based products).'
+        }),
+        ('Product Options', {
+            'fields': ('option',),
+            'description': 'Specify product dimensions, length, or other specifications (e.g., "3.6 m", "2400x1200mm", "4x8 feet") - REQUIRED'
         }),
         ('Pricing & Location', {
             'fields': ('price', 'location')
@@ -152,17 +160,29 @@ class ProductAdmin(admin.ModelAdmin):
         }),
     )
     
+    def get_product_name(self, obj):
+        return obj.get_name()
+    get_product_name.short_description = 'Product Name'
+    
     def get_dimension_display(self, obj):
         return obj.get_dimension_display()
     get_dimension_display.short_description = 'Dimensions'
     
     def get_category(self, obj):
-        return obj.profile.category.name
+        category = obj.get_category()
+        return category.name if category else "No Category"
     get_category.short_description = 'Category'
-    get_category.admin_order_field = 'profile__category__name'
     
     def has_image(self, obj):
-        if obj.image_url or obj.profile.image_url:
-            return format_html('<span style="color: green;">✓ Yes</span>')
-        return format_html('<span style="color: red;">✗ No</span>')
-    has_image.short_description = 'Has Image'
+        """Show image source with fallback hierarchy: Product -> Profile -> Category"""
+        if obj.image_url:
+            return format_html('<span style="color: green;">✓ Product</span>')
+        elif obj.profile and obj.profile.image_url:
+            return format_html('<span style="color: blue;">✓ Profile</span>')
+        elif obj.profile and obj.profile.category and obj.profile.category.image_url:
+            return format_html('<span style="color: orange;">✓ Category</span>')
+        elif obj.category and obj.category.image_url:
+            return format_html('<span style="color: orange;">✓ Category</span>')
+        else:
+            return format_html('<span style="color: red;">✗ None</span>')
+    has_image.short_description = 'Image Source'

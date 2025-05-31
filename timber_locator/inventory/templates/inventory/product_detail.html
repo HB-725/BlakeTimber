@@ -2,9 +2,16 @@
 {% extends "inventory/base.html" %}
 
 {% block breadcrumb %}
-<li class="breadcrumb-item"><a href="{% url 'category-detail' object.profile.category.slug %}">{{ object.profile.category.name }}</a></li>
-<li class="breadcrumb-item"><a href="{% url 'profile-detail' object.profile.pk %}">{{ object.profile.name }}</a></li>
-<li class="breadcrumb-item active">{{ object.get_dimension_display }}</li>
+{% if object.profile %}
+  <!-- Profile-based product breadcrumb -->
+  <li class="breadcrumb-item"><a href="{% url 'category-detail' object.profile.category.slug %}">{{ object.profile.category.name }}</a></li>
+  <li class="breadcrumb-item"><a href="{% url 'profile-detail' object.profile.pk %}">{{ object.profile.name }}</a></li>
+  <li class="breadcrumb-item active">{{ object.get_dimension_display }}</li>
+{% else %}
+  <!-- Direct product breadcrumb -->
+  <li class="breadcrumb-item"><a href="{% url 'category-detail' object.category.slug %}">{{ object.category.name }}</a></li>
+  <li class="breadcrumb-item active">{{ object.get_dimension_display }}</li>
+{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -14,12 +21,16 @@
       <!-- Product Image -->
       {% if object.get_display_image %}
       <div class="image-wrapper rounded mb-4" style="padding-top: 75%;">
-        <img src="{{ object.get_display_image }}" class="card-img-top" alt="{{ object.profile.name }} - {{ object.get_dimension_display }}" style="object-fit: contain;">
+        <img src="{{ object.get_display_image }}" class="card-img-top" alt="{{ object.get_name }} - {{ object.get_dimension_display }}" style="object-fit: contain;">
       </div>
       {% endif %}
 
       <!-- Product Details -->
-      <h6 class="card-title mb-4">{{ object.profile.category.name }} - {{ object.profile.name }}{% if object.get_dimension_display %} – {{ object.get_dimension_display }}{% endif %}</h6>
+      {% if object.profile %}
+        <h6 class="card-title mb-4">{{ object.profile.category.name }} - {{ object.profile.name }}{% if object.get_dimension_display %} – {{ object.get_dimension_display }}{% endif %}</h6>
+      {% else %}
+        <h6 class="card-title mb-4">{{ object.category.name }}{% if object.get_dimension_display %} – {{ object.get_dimension_display }}{% endif %}</h6>
+      {% endif %}
       <div class="row mb-4">
         <div class="col-md-6">
           <ul class="list-unstyled">

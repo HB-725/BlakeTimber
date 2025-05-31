@@ -83,8 +83,6 @@ class Profile(models.Model):
         elif len(dimensions) == 2:  # timber format: width x height
             length = dimensions[0]
         
-        # Debug output to see what's happening
-        print(f"Profile: {self.name} -> Dimensions: {dimensions} -> Length: {length}")
         return length
     
     def get_thickness(self):
@@ -94,45 +92,75 @@ class Profile(models.Model):
         if len(dimensions) == 3:  # MDF format: length x width x thickness
             thickness = dimensions[2]
         
-        # Debug output to see what's happening
-        print(f"Profile: {self.name} -> Dimensions: {dimensions} -> Thickness: {thickness}")
         return thickness
+
+    def get_display_image(self):
+        """Return profile image URL with category fallback"""
+        if self.image_url:
+            return self.image_url
+        elif self.category and self.category.image_url:
+            return self.category.image_url
+        else:
+            return None
 
     class Meta:
         ordering = ['name']  # Default ordering - will be overridden in views with custom sorting
 
 class Product(models.Model):
-    profile   = models.ForeignKey(Profile, on_delete=models.CASCADE)
-    length    = models.DecimalField(max_digits=4, decimal_places=1, help_text="Length in meters", blank=True, null=True)
-    size      = models.CharField(max_length=100, help_text="Size dimensions (e.g., '2400x1200mm', '4x8 feet')", blank=True, null=True)
+    # Products can be linked either to a Category directly OR through a Profile
+    category  = models.ForeignKey(Category, on_delete=models.CASCADE, blank=True, null=True)
+    profile   = models.ForeignKey(Profile, on_delete=models.CASCADE, blank=True, null=True)
+    option    = models.CharField(max_length=100, help_text="Product option (length, size, or other specifications)")
     in_number = models.CharField("I/N Number", max_length=50, unique=True)
     price     = models.DecimalField(max_digits=8, decimal_places=2)
     location  = models.CharField(max_length=100, blank=True, null=True)
     image_url = models.URLField("Image URL", max_length=500, blank=True, null=True)
 
+    def clean(self):
+        """Ensure either category or profile is set, but not both"""
+        from django.core.exceptions import ValidationError
+        if not self.category and not self.profile:
+            raise ValidationError("Either category or profile must be set.")
+        if self.category and self.profile:
+            raise ValidationError("Cannot set both category and profile. Choose one.")
+
+    def get_category(self):
+        """Get the category, either direct or through profile"""
+        if self.category:
+            return self.category
+        elif self.profile:
+            return self.profile.category
+        return None
+
+    def get_name(self):
+        """Get the product name from profile or category"""
+        if self.profile:
+            return self.profile.name
+        elif self.category:
+            return self.category.name
+        return "Unnamed Product"
+
     def __str__(self):
-        if self.length:
-            return f"{self.profile.name} – {self.length} m"
-        elif self.size:
-            return f"{self.profile.name} – {self.size}"
+        name = self.get_name()
+        if self.option:
+            return f"{name} – {self.option}"
         else:
-            return f"{self.profile.name}"
+            return name
 
     def get_dimension_display(self):
-        """Return either length or size for display"""
-        if self.length:
-            return f"{self.length} m"
-        elif self.size:
-            return self.size
-        else:
-            return ""
+        """Return the option for display"""
+        return self.option if self.option else ""
 
     def get_display_image(self):
-        """Return product image URL if available, otherwise profile image URL"""
+        """Return image URL with fallback hierarchy: Product -> Profile -> Category"""
         if self.image_url:
             return self.image_url
-        elif self.profile.image_url:
+        elif self.profile and self.profile.image_url:
             return self.profile.image_url
+        elif self.profile and self.profile.category and self.profile.category.image_url:
+            return self.profile.category.image_url
+        elif self.category and self.category.image_url:
+            return self.category.image_url
         else:
             return None
 
@@ -142,4 +170,4 @@ class Product(models.Model):
         return mark_safe(f'<img src="{barcode_url}" alt="Barcode" style="width: 100%; height: auto;">')
 
     class Meta:
-        ordering = ['length', 'size']  # Sort products by length first, then size
+        ordering = ['option']  # Sort products by option field

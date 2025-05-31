@@ -34,14 +34,36 @@
       <a href="{% url 'profile-detail' profile.pk %}" class="text-decoration-none">
         <div class="card h-100">
           <div class="image-wrapper">
-            {% if profile.image_url %}
-              <img src="{{ profile.image_url }}" class="card-img-top" alt="{{ profile.name }}" loading="lazy">
+            {% if profile.get_display_image %}
+              <img src="{{ profile.get_display_image }}" class="card-img-top" alt="{{ profile.name }}" loading="lazy">
             {% else %}
               <div class="placeholder-image"></div>
             {% endif %}
           </div>
           <div class="card-body p-3">
             <h6 class="card-title text-dark mb-0">{{ profile.name }}</h6>
+          </div>
+        </div>
+      </a>
+    </div>
+    {% endfor %}
+    
+    {% for product in direct_products %}
+    <div class="col-6">
+      <a href="{% url 'product-detail' product.pk %}" class="text-decoration-none">
+        <div class="card h-100">
+          <div class="image-wrapper">
+            {% if product.get_display_image %}
+              <img src="{{ product.get_display_image }}" class="card-img-top" alt="{{ product.get_name }}" loading="lazy">
+            {% else %}
+              <div class="placeholder-image"></div>
+            {% endif %}
+          </div>
+          <div class="card-body p-3">
+            <h6 class="card-title text-dark mb-0">{{ product.get_name }}</h6>
+            {% if product.option %}
+              <small class="text-muted">{{ product.option }}</small>
+            {% endif %}
           </div>
         </div>
       </a>

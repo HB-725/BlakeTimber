@@ -17,6 +17,22 @@ class CategoryDetail(DetailView):
     slug_field = 'slug'
     slug_url_kwarg = 'slug'
 
+    def get(self, request, *args, **kwargs):
+        """Check if category has profiles or only direct products"""
+        self.object = self.get_object()
+        
+        # Get profiles and direct products for this category
+        profiles = Profile.objects.filter(category=self.object)
+        direct_products = Product.objects.filter(category=self.object, profile__isnull=True)
+        
+        # If no profiles exist but direct products do, redirect to first product
+        if not profiles.exists() and direct_products.exists():
+            first_product = direct_products.first()
+            return redirect('product-detail', pk=first_product.pk)
+        
+        # Otherwise, show the category detail page normally
+        return super().get(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         try:
             context = super().get_context_data(**kwargs)
@@ -24,10 +40,14 @@ class CategoryDetail(DetailView):
             # Get all children categories
             context['children'] = self.object.get_children()
             logger.debug(f"Children: {context['children']}")
+            
             # Get all profiles for this category, sorted appropriately
             profiles = Profile.objects.filter(category=self.object)
             
-            # Sort differently based on category type
+            # Get direct products for this category (not through profiles)
+            direct_products = Product.objects.filter(category=self.object, profile__isnull=True)
+            
+            # Sort profiles based on category type
             if 'plasterboard' in self.object.name.lower():
                 # For plasterboard, sort by length (first dimension)
                 print(f"Sorting plasterboard category: {self.object.name}")
@@ -42,7 +62,12 @@ class CategoryDetail(DetailView):
                 # For timber and other categories, sort by width (first dimension)
                 print(f"Sorting timber category: {self.object.name}")
                 context['profiles'] = sorted(profiles, key=lambda profile: profile.get_width())
+            
+            # Add direct products to context
+            context['direct_products'] = direct_products.order_by('option')
+            
             logger.debug(f"Profiles: {context['profiles']}")
+            logger.debug(f"Direct products: {context['direct_products']}")
             return context
         except Exception as e:
             logger.error(f"Error in CategoryDetail.get_context_data: {str(e)}", exc_info=True)
@@ -67,8 +92,18 @@ class ProductDetail(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Get all products with the same profile, including current product
-        context['all_products'] = Product.objects.filter(
-            profile=self.object.profile
-        ).order_by('length', 'size')
+        
+        # Get all products with the same classification (either profile-based or category-based)
+        if self.object.profile:
+            # If this product has a profile, get all products with the same profile
+            context['all_products'] = Product.objects.filter(
+                profile=self.object.profile
+            ).order_by('option')
+        else:
+            # If this product is directly linked to category, get all direct products in same category
+            context['all_products'] = Product.objects.filter(
+                category=self.object.category,
+                profile__isnull=True
+            ).order_by('option')
+        
         return context
