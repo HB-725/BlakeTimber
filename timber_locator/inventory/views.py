@@ -1,7 +1,6 @@
-from django.shortcuts import render, get_object_or_404
-
 # inventory/views.py
 from django.views.generic import ListView, DetailView
+from django.shortcuts import get_object_or_404, redirect
 from .models import Category, Profile, Product
 import logging
 
@@ -35,7 +34,16 @@ class CategoryDetail(DetailView):
 
 class ProfileDetail(DetailView):
     model = Profile
-    template_name = 'inventory/profile_detail.html'
+    
+    def get(self, request, *args, **kwargs):
+        profile = get_object_or_404(Profile, pk=kwargs['pk'])
+        # Get the first product for this profile
+        first_product = profile.product_set.first()
+        if first_product:
+            return redirect('product-detail', pk=first_product.pk)
+        else:
+            # If no products exist, redirect back to category
+            return redirect('category-detail', slug=profile.category.slug)
 
 class ProductDetail(DetailView):
     model = Product
@@ -43,36 +51,8 @@ class ProductDetail(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Get other products with the same profile, excluding current product
-        context['other_lengths'] = Product.objects.filter(
+        # Get all products with the same profile, including current product
+        context['all_lengths'] = Product.objects.filter(
             profile=self.object.profile
-        ).exclude(
-            id=self.object.id
         ).order_by('length')
         return context
-
-def category_list(request):
-    categories = Category.objects.all()
-    return render(request, 'inventory/category_list.html', {'categories': categories})
-
-def profile_list(request, category_id):
-    category = get_object_or_404(Category, id=category_id)
-    profiles = list(Profile.objects.filter(category=category))
-    # Sort profiles by dimensions (width, then height)
-    profiles.sort(key=lambda p: p.get_dimensions())
-    return render(request, 'inventory/profile_list.html', {
-        'category': category,
-        'profiles': profiles
-    })
-
-def product_list(request, profile_id):
-    profile = get_object_or_404(Profile, id=profile_id)
-    products = Product.objects.filter(profile=profile)
-    return render(request, 'inventory/product_list.html', {
-        'profile': profile,
-        'products': products
-    })
-
-def product_detail(request, product_id):
-    product = get_object_or_404(Product, id=product_id)
-    return render(request, 'inventory/product_detail.html', {'product': product})

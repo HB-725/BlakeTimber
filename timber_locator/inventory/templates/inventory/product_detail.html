@@ -3,8 +3,7 @@
 
 {% block breadcrumb %}
 <li class="breadcrumb-item"><a href="{% url 'category-detail' object.profile.category.slug %}">{{ object.profile.category.name }}</a></li>
-<li class="breadcrumb-item"><a href="{% url 'profile-detail' object.profile.pk %}">{{ object.profile.name }}</a></li>
-<li class="breadcrumb-item active">{{ object.length }} m</li>
+<li class="breadcrumb-item active">{{ object.profile.name }} - {{ object.length }} m</li>
 {% endblock %}
 
 {% block content %}
@@ -30,35 +29,33 @@
         </div>
       </div>
 
+      <!-- Length Options -->
+      {% if all_lengths %}
+      <div class="mb-4">
+        <h6 class="mb-3">Available Lengths:</h6>
+        <div class="row g-2">
+          {% for product in all_lengths %}
+            <div class="col-2-4">
+              {% if product.id == object.id %}
+                <a href="#" class="btn btn-outline-dark w-100 current-length" onclick="return false;">
+                  {{ product.length }}m
+                </a>
+              {% else %}
+                <a href="{% url 'product-detail' product.id %}" 
+                   class="btn btn-outline-dark w-100">
+                  {{ product.length }}m
+                </a>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
       <!-- Barcode -->
       <div class="barcode-container mb-4">
         {{ object.barcode_svg|safe }}
       </div>
-
-      <!-- Length Options -->
-      {% if all_lengths %}
-      <div class="card mt-4">
-        <div class="card-body">
-          <h6 class="card-title mb-3">Options:</h6>
-          <div class="row g-2">
-            {% for product in all_lengths %}
-              <div class="col-3">
-                {% if product.id == object.id %}
-                  <a href="#" class="btn btn-outline-dark w-100 current-length" onclick="return false;">
-                    {{ product.length }}m
-                  </a>
-                {% else %}
-                  <a href="{% url 'product-detail' product.id %}" 
-                     class="btn btn-outline-dark w-100">
-                    {{ product.length }}m
-                  </a>
-                {% endif %}
-              </div>
-            {% endfor %}
-          </div>
-        </div>
-      </div>
-      {% endif %}
     </div>
   </div>
 </div>
@@ -89,8 +86,19 @@
   text-align: center;
 }
 .current-length {
+  background-color: #212529 !important;
+  color: white !important;
   border-width: 2px !important;
+  border-color: #212529 !important;
   cursor: default;
+  font-weight: bold;
+}
+/* Custom CSS for 5 columns per row */
+.col-2-4 {
+  flex: 0 0 20%;
+  max-width: 20%;
+  padding-right: 0.375rem;
+  padding-left: 0.375rem;
 }
 </style>
 {% endblock %}
