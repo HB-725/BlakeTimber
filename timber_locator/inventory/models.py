@@ -32,17 +32,31 @@ class Profile(models.Model):
         return f"{self.name} ({self.category.name})"
 
     def get_dimensions(self):
-        # Extract numbers from name (e.g., "90 x 35 mm" -> (90, 35))
+        # Extract numbers from name (e.g., "90 x 35mm" or "90 x 35 mm" -> (90, 35))
         try:
             parts = self.name.split('x')
             width = int(parts[0].strip())
-            height = int(parts[1].strip().split()[0])
+            # Handle both "35mm" and "35 mm" formats
+            height_part = parts[1].strip()
+            # Remove 'mm' from the end if present
+            if height_part.endswith('mm'):
+                height_part = height_part[:-2]
+            elif ' ' in height_part:
+                height_part = height_part.split()[0]
+            height = int(height_part)
             return (width, height)
         except (ValueError, IndexError):
             return (0, 0)  # Default for invalid formats
 
+    def get_width(self):
+        """Get the width value for sorting purposes"""
+        print(f"Dimensions for {self.name}: {self.get_dimensions()}")
+
+
+        return self.get_dimensions()[0]
+
     class Meta:
-        ordering = ['name']  # This will be overridden by the natural sorting in the view
+        ordering = ['name']  # Default ordering - will be overridden in views with custom sorting
 
 class Product(models.Model):
     profile   = models.ForeignKey(Profile, on_delete=models.CASCADE)

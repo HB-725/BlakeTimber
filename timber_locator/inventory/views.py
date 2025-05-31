@@ -24,8 +24,9 @@ class CategoryDetail(DetailView):
             # Get all children categories
             context['children'] = self.object.get_children()
             logger.debug(f"Children: {context['children']}")
-            # Get all profiles for this category
-            context['profiles'] = Profile.objects.filter(category=self.object)
+            # Get all profiles for this category, sorted by width numerically
+            profiles = Profile.objects.filter(category=self.object)
+            context['profiles'] = sorted(profiles, key=lambda profile: profile.get_width())
             logger.debug(f"Profiles: {context['profiles']}")
             return context
         except Exception as e:
