@@ -24,9 +24,24 @@ class CategoryDetail(DetailView):
             # Get all children categories
             context['children'] = self.object.get_children()
             logger.debug(f"Children: {context['children']}")
-            # Get all profiles for this category, sorted by width numerically
+            # Get all profiles for this category, sorted appropriately
             profiles = Profile.objects.filter(category=self.object)
-            context['profiles'] = sorted(profiles, key=lambda profile: profile.get_width())
+            
+            # Sort differently based on category type
+            if 'plasterboard' in self.object.name.lower():
+                # For plasterboard, sort by length (first dimension)
+                print(f"Sorting plasterboard category: {self.object.name}")
+                context['profiles'] = sorted(profiles, key=lambda profile: profile.get_length())
+                print(f"Sorted profiles: {[p.name for p in context['profiles']]}")
+            elif 'mdf' in self.object.name.lower():
+                # For MDF, sort by thickness (third dimension)
+                print(f"Sorting MDF category: {self.object.name}")
+                context['profiles'] = sorted(profiles, key=lambda profile: profile.get_thickness())
+                print(f"Sorted profiles: {[p.name for p in context['profiles']]}")
+            else:
+                # For timber and other categories, sort by width (first dimension)
+                print(f"Sorting timber category: {self.object.name}")
+                context['profiles'] = sorted(profiles, key=lambda profile: profile.get_width())
             logger.debug(f"Profiles: {context['profiles']}")
             return context
         except Exception as e:

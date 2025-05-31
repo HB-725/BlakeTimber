@@ -23,6 +23,41 @@ class ProfileWidthFilter(admin.SimpleListFilter):
         if self.value() == 'large':
             return queryset.filter(name__startswith=('190', '240'))
 
+class ProfileLengthFilter(admin.SimpleListFilter):
+    title = 'Length Range (Plasterboard)'
+    parameter_name = 'plasterboard_length'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('2400', '2400mm'),
+            ('3000', '3000mm'),
+            ('3600', '3600mm'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(name__startswith=self.value())
+        return queryset
+
+class ProfileThicknessFilter(admin.SimpleListFilter):
+    title = 'Thickness Range (MDF/Sheets)'
+    parameter_name = 'mdf_thickness'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('3mm', '3mm'),
+            ('6mm', '6mm'),
+            ('9mm', '9mm'),
+            ('12mm', '12mm'),
+            ('16mm', '16mm'),
+            ('18mm', '18mm'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(name__contains=self.value())
+        return queryset
+
 
 class ProductLengthFilter(admin.SimpleListFilter):
     title = 'Length Range'
@@ -65,22 +100,21 @@ class CategoryAdmin(DraggableMPTTAdmin):
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ('name', 'category', 'get_width_display', 'get_height_display', 'get_product_count', 'has_image')
-    list_filter = ('category', ProfileWidthFilter)
+    list_display = ('name', 'category', 'get_dimensions_display', 'get_product_count', 'has_image')
+    list_filter = ('category', ProfileWidthFilter, ProfileLengthFilter, ProfileThicknessFilter)
     search_fields = ('name', 'category__name')
     ordering = ('category', 'name')
     list_per_page = 25
     
-    def get_width_display(self, obj):
-        width, _ = obj.get_dimensions()
-        return f"{width}mm" if width > 0 else "N/A"
-    get_width_display.short_description = 'Width'
-    get_width_display.admin_order_field = 'name'
-    
-    def get_height_display(self, obj):
-        _, height = obj.get_dimensions()
-        return f"{height}mm" if height > 0 else "N/A"
-    get_height_display.short_description = 'Height'
+    def get_dimensions_display(self, obj):
+        dimensions = obj.get_dimensions()
+        if len(dimensions) == 3:
+            return f"{dimensions[0]} x {dimensions[1]} x {dimensions[2]}mm"
+        elif len(dimensions) == 2:
+            return f"{dimensions[0]} x {dimensions[1]}mm"
+        else:
+            return "N/A"
+    get_dimensions_display.short_description = 'Dimensions'
     
     def get_product_count(self, obj):
         return obj.product_set.count()

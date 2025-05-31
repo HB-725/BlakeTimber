@@ -32,28 +32,71 @@ class Profile(models.Model):
         return f"{self.name} ({self.category.name})"
 
     def get_dimensions(self):
-        # Extract numbers from name (e.g., "90 x 35mm" or "90 x 35 mm" -> (90, 35))
+        # Extract numbers from name 
+        # Handles: "90 x 35mm" (timber) -> (90, 35) 
+        # Handles: "2400 x 1200 x 10mm" (plasterboard) -> (2400, 1200, 10)
+        # Handles: "3000 x 1350mm 10mm" (plasterboard variant) -> (3000, 1350, 10)
         try:
-            parts = self.name.split('x')
-            width = int(parts[0].strip())
-            # Handle both "35mm" and "35 mm" formats
-            height_part = parts[1].strip()
-            # Remove 'mm' from the end if present
-            if height_part.endswith('mm'):
-                height_part = height_part[:-2]
-            elif ' ' in height_part:
-                height_part = height_part.split()[0]
-            height = int(height_part)
-            return (width, height)
+            # First, clean up the name and standardize the format
+            cleaned_name = self.name.strip()
+            
+            # Handle different spacing patterns around 'mm'
+            # "3000 x 1350mm 10mm" -> "3000 x 1350 x 10mm"
+            # "3600 x 1200mm 10mm" -> "3600 x 1200 x 10mm"
+            import re
+            # Replace "mm " with " x " to standardize format
+            cleaned_name = re.sub(r'mm\s+', ' x ', cleaned_name)
+            
+            parts = cleaned_name.split('x')
+            dimensions = []
+            
+            for i, part in enumerate(parts):
+                part = part.strip()
+                # Remove 'mm' from the end if present
+                if part.endswith('mm'):
+                    part = part[:-2]
+                elif ' ' in part:
+                    part = part.split()[0]
+                dimensions.append(int(part))
+            
+            # Return tuple based on number of dimensions
+            if len(dimensions) == 2:
+                return (dimensions[0], dimensions[1])  # timber: (width, height)
+            elif len(dimensions) == 3:
+                return (dimensions[0], dimensions[1], dimensions[2])  # plasterboard: (length, width, thickness)
+            else:
+                return (0, 0)  # Default for invalid formats
         except (ValueError, IndexError):
             return (0, 0)  # Default for invalid formats
 
     def get_width(self):
-        """Get the width value for sorting purposes"""
-        print(f"Dimensions for {self.name}: {self.get_dimensions()}")
-
-
-        return self.get_dimensions()[0]
+        """Get the width value for sorting purposes (first dimension for timber)"""
+        dimensions = self.get_dimensions()
+        return dimensions[0] if len(dimensions) >= 1 else 0
+    
+    def get_length(self):
+        """Get the length value for sorting purposes (first dimension for plasterboard)"""
+        dimensions = self.get_dimensions()
+        length = 0
+        if len(dimensions) == 3:  # plasterboard format: length x width x thickness
+            length = dimensions[0]
+        elif len(dimensions) == 2:  # timber format: width x height
+            length = dimensions[0]
+        
+        # Debug output to see what's happening
+        print(f"Profile: {self.name} -> Dimensions: {dimensions} -> Length: {length}")
+        return length
+    
+    def get_thickness(self):
+        """Get the thickness value for sorting purposes (third dimension for MDF/sheets)"""
+        dimensions = self.get_dimensions()
+        thickness = 0
+        if len(dimensions) == 3:  # MDF format: length x width x thickness
+            thickness = dimensions[2]
+        
+        # Debug output to see what's happening
+        print(f"Profile: {self.name} -> Dimensions: {dimensions} -> Thickness: {thickness}")
+        return thickness
 
     class Meta:
         ordering = ['name']  # Default ordering - will be overridden in views with custom sorting
