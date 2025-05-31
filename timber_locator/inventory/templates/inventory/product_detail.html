@@ -3,12 +3,18 @@
 
 {% block breadcrumb %}
 {% if object.profile %}
-  <!-- Profile-based product breadcrumb -->
+  <!-- Profile-based product breadcrumb with full category hierarchy -->
+  {% for ancestor in object.profile.category.get_ancestors %}
+    <li class="breadcrumb-item"><a href="{% url 'category-detail' ancestor.slug %}">{{ ancestor.name }}</a></li>
+  {% endfor %}
   <li class="breadcrumb-item"><a href="{% url 'category-detail' object.profile.category.slug %}">{{ object.profile.category.name }}</a></li>
   <li class="breadcrumb-item"><a href="{% url 'profile-detail' object.profile.pk %}">{{ object.profile.name }}</a></li>
   <li class="breadcrumb-item active">{{ object.get_dimension_display }}</li>
 {% else %}
-  <!-- Direct product breadcrumb -->
+  <!-- Direct product breadcrumb with full category hierarchy -->
+  {% for ancestor in object.category.get_ancestors %}
+    <li class="breadcrumb-item"><a href="{% url 'category-detail' ancestor.slug %}">{{ ancestor.name }}</a></li>
+  {% endfor %}
   <li class="breadcrumb-item"><a href="{% url 'category-detail' object.category.slug %}">{{ object.category.name }}</a></li>
   <li class="breadcrumb-item active">{{ object.get_dimension_display }}</li>
 {% endif %}

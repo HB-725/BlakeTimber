@@ -1,9 +1,9 @@
 {% extends "inventory/base.html" %}
 
 {% block breadcrumb %}
-{% if object.parent %}
-  <li class="breadcrumb-item"><a href="{% url 'category-detail' object.parent.slug %}">{{ object.parent.name }}</a></li>
-{% endif %}
+{% for ancestor in object.get_ancestors %}
+  <li class="breadcrumb-item"><a href="{% url 'category-detail' ancestor.slug %}">{{ ancestor.name }}</a></li>
+{% endfor %}
 <li class="breadcrumb-item active">{{ object.name }}</li>
 {% endblock %}
 
