@@ -65,6 +65,10 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     function performSearch(query) {
+        // Show loading state
+        searchResults.innerHTML = '<div class="search-loading">Searching...</div>';
+        searchResults.style.display = 'block';
+        
         // Get the search URL from the data attribute
         const searchUrl = document.querySelector('[data-search-url]').dataset.searchUrl;
         
@@ -84,6 +88,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (products.length === 0) {
             searchResults.innerHTML = '<div class="p-3 text-muted">No products found</div>';
         } else {
+            const searchQuery = searchInput.value.trim();
+            const searchTerms = searchQuery.split(/\s+/).filter(term => term.length > 0);
+            
             let html = '';
             products.forEach(product => {
                 const imageHtml = product.image_url 
@@ -91,7 +98,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     : `<div class="me-3 bg-light d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; border-radius: 4px;"><span class="text-muted">📦</span></div>`;
                 
                 const optionText = product.option ? ` - ${product.option}` : '';
-                const locationText = product.location ? ` (${product.location})` : '';
+                const noteText = product.note ? ` (${product.note})` : '';
                 
                 html += `
                     <a href="${product.url}" class="text-decoration-none">
@@ -100,7 +107,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="flex-grow-1">
                                 <div class="fw-semibold text-dark">${product.name}${optionText}</div>
                                 <div class="small text-muted">
-                                    I/N: ${product.in_number} • $${product.price}${locationText}
+                                    I/N: ${product.in_number} • $${product.price}${noteText}
                                 </div>
                                 <div class="small text-secondary">${product.category}</div>
                             </div>

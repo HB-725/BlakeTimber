@@ -132,12 +132,12 @@ class ProfileAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('in_number', 'get_product_name', 'option', 'price', 'location', 'has_image', 'get_category')
-    list_filter = ('category', 'profile__category', 'profile', 'location', ProductPriceRangeFilter)
-    search_fields = ('in_number', 'profile__name', 'category__name', 'profile__category__name', 'location', 'option')
+    list_display = ('in_number', 'get_product_name', 'option', 'price', 'note', 'has_image', 'get_category')
+    list_filter = ('category', 'profile__category', 'profile', 'note', ProductPriceRangeFilter)
+    search_fields = ('in_number', 'profile__name', 'category__name', 'profile__category__name', 'note', 'option')
     ordering = ('category', 'profile__category', 'profile__name', 'option')
     list_per_page = 50
-    list_editable = ('option', 'price', 'location')
+    list_editable = ('option', 'price', 'note')
     
     fieldsets = (
         ('Basic Information', {
@@ -151,8 +151,8 @@ class ProductAdmin(admin.ModelAdmin):
             'fields': ('option',),
             'description': 'Specify product dimensions, length, or other specifications (e.g., "3.6 m", "2400x1200mm", "4x8 feet") - REQUIRED'
         }),
-        ('Pricing & Location', {
-            'fields': ('price', 'location')
+        ('Pricing & Notes', {
+            'fields': ('price', 'note')
         }),
         ('Media', {
             'fields': ('image_url',),

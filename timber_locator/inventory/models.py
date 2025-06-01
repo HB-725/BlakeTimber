@@ -113,7 +113,7 @@ class Product(models.Model):
     option    = models.CharField(max_length=100, help_text="Product option (length, size, or other specifications)")
     in_number = models.CharField("I/N Number", max_length=50, unique=True)
     price     = models.DecimalField(max_digits=8, decimal_places=2)
-    location  = models.CharField(max_length=100, blank=True, null=True)
+    note      = models.CharField(max_length=100, blank=True, null=True)
     image_url = models.URLField("Image URL", max_length=500, blank=True, null=True)
 
     def clean(self):

@@ -111,31 +111,170 @@ class ProductDetail(DetailView):
         return context
 
 def search_products(request):
-    """AJAX endpoint for product search"""
+    """AJAX endpoint for product search with fuzzy matching"""
     query = request.GET.get('q', '').strip()
     
     if not query or len(query) < 2:
         return JsonResponse({'products': []})
     
-    # Search across multiple fields
-    products = Product.objects.filter(
-        Q(in_number__icontains=query) |
-        Q(option__icontains=query) |
-        Q(profile__name__icontains=query) |
-        Q(category__name__icontains=query) |
-        Q(profile__category__name__icontains=query) |
-        Q(location__icontains=query)
-    ).select_related('profile', 'category', 'profile__category')[:20]  # Limit to 20 results
+    # Split search query into individual terms for fuzzy matching
+    search_terms = [term.strip() for term in query.split() if term.strip()]
+    
+    if not search_terms:
+        return JsonResponse({'products': []})
+    
+    # Start with all products
+    products = Product.objects.select_related('profile', 'category', 'profile__category')
+    
+    # Create a comprehensive OR filter that searches across all fields for any term
+    # This makes the search much more flexible and user-friendly
+    master_filter = Q()
+    
+    for term in search_terms:
+        term_filter = (
+            Q(option__icontains=term) |
+            Q(profile__name__icontains=term) |
+            Q(category__name__icontains=term) |
+            Q(profile__category__name__icontains=term) |
+            Q(note__icontains=term)
+        )
+        master_filter |= term_filter
+    
+    # Apply the combined filter
+    products = products.filter(master_filter)
+    
+    # Limit results and convert to list
+    products = list(products[:100])  # Get more results for better scoring
+    
+    # Score and sort results by relevance
+    def calculate_relevance_score(product, search_terms):
+        score = 0
+        
+        # Get all searchable text for this product (excluding I/N number, price, image_url)
+        # Priority order: category > profile > option > note
+        category_text = ''
+        profile_text = ''
+        option_text = product.option or ''
+        note_text = product.note or ''
+        
+        # Get category text (highest priority)
+        if product.category:
+            category_text = product.category.name
+        elif product.profile and product.profile.category:
+            category_text = product.profile.category.name
+            
+        # Get profile text (second highest priority)
+        if product.profile:
+            profile_text = product.profile.name
+        
+        # Track matches for bonus calculation
+        exact_category_matches = 0
+        exact_profile_matches = 0
+        exact_option_matches = 0
+        exact_note_matches = 0
+        
+        partial_category_matches = 0
+        partial_profile_matches = 0
+        partial_option_matches = 0
+        partial_note_matches = 0
+        
+        for term in search_terms:
+            term_lower = term.lower().strip()
+            
+            # CATEGORY MATCHES (highest weight - 1000 base)
+            if category_text:
+                category_lower = category_text.lower()
+                category_words = category_lower.split()
+                
+                # Exact word match in category
+                if term_lower in category_words:
+                    score += 1000
+                    exact_category_matches += 1
+                # Partial match in category (much lower but still significant)
+                elif term_lower in category_lower:
+                    score += 200
+                    partial_category_matches += 1
+            
+            # PROFILE MATCHES (second highest weight - 500 base)
+            if profile_text:
+                profile_lower = profile_text.lower()
+                profile_words = profile_lower.split()
+                
+                # Exact word match in profile
+                if term_lower in profile_words:
+                    score += 500
+                    exact_profile_matches += 1
+                # Partial match in profile
+                elif term_lower in profile_lower:
+                    score += 100
+                    partial_profile_matches += 1
+            
+            # OPTION MATCHES (third priority - 100 base)
+            if option_text:
+                option_lower = option_text.lower()
+                option_words = option_lower.split()
+                
+                # Exact word match in option
+                if term_lower in option_words:
+                    score += 100
+                    exact_option_matches += 1
+                # Partial match in option
+                elif term_lower in option_lower:
+                    score += 20
+                    partial_option_matches += 1
+            
+            # NOTE MATCHES (lowest priority - 50 base)
+            if note_text:
+                note_lower = note_text.lower()
+                note_words = note_lower.split()
+                
+                # Exact word match in note
+                if term_lower in note_words:
+                    score += 50
+                    exact_note_matches += 1
+                # Partial match in note
+                elif term_lower in note_lower:
+                    score += 10
+                    partial_note_matches += 1
+        
+        # MASSIVE bonuses for comprehensive exact matches
+        total_terms = len(search_terms)
+        total_exact_matches = exact_category_matches + exact_profile_matches + exact_option_matches + exact_note_matches
+        
+        # Huge bonus if all terms have exact matches somewhere
+        if total_exact_matches >= total_terms:
+            score += 5000
+        
+        # Extra bonuses based on where exact matches occur
+        if exact_category_matches > 0:
+            score += exact_category_matches * 500  # Big bonus for category matches
+        if exact_profile_matches > 0:
+            score += exact_profile_matches * 250   # Good bonus for profile matches
+        if exact_option_matches > 0:
+            score += exact_option_matches * 100    # Moderate bonus for option matches
+        
+        return score
+    
+    # Score all products and sort by relevance
+    scored_products = []
+    for product in products:
+        score = calculate_relevance_score(product, search_terms)
+        if score > 0:  # Only include products with some relevance
+            scored_products.append((score, product))
+    
+    # Sort by score (highest first) and limit to 20 results
+    scored_products.sort(key=lambda x: x[0], reverse=True)
+    final_products = [product for score, product in scored_products[:20]]
     
     results = []
-    for product in products:
+    for product in final_products:
         results.append({
             'id': product.id,
             'name': product.get_name(),
             'option': product.option or '',
             'in_number': product.in_number,
             'price': str(product.price),
-            'location': product.location or '',
+            'note': product.note or '',
             'image_url': product.get_display_image(),
             'url': f'/product/{product.id}/',
             'category': product.get_category().name if product.get_category() else ''
