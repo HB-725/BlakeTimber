@@ -1,6 +1,8 @@
 # inventory/views.py
 from django.views.generic import ListView, DetailView
 from django.shortcuts import get_object_or_404, redirect
+from django.http import JsonResponse
+from django.db.models import Q
 from .models import Category, Profile, Product
 import logging
 
@@ -107,3 +109,36 @@ class ProductDetail(DetailView):
             ).order_by('option')
         
         return context
+
+def search_products(request):
+    """AJAX endpoint for product search"""
+    query = request.GET.get('q', '').strip()
+    
+    if not query or len(query) < 2:
+        return JsonResponse({'products': []})
+    
+    # Search across multiple fields
+    products = Product.objects.filter(
+        Q(in_number__icontains=query) |
+        Q(option__icontains=query) |
+        Q(profile__name__icontains=query) |
+        Q(category__name__icontains=query) |
+        Q(profile__category__name__icontains=query) |
+        Q(location__icontains=query)
+    ).select_related('profile', 'category', 'profile__category')[:20]  # Limit to 20 results
+    
+    results = []
+    for product in products:
+        results.append({
+            'id': product.id,
+            'name': product.get_name(),
+            'option': product.option or '',
+            'in_number': product.in_number,
+            'price': str(product.price),
+            'location': product.location or '',
+            'image_url': product.get_display_image(),
+            'url': f'/product/{product.id}/',
+            'category': product.get_category().name if product.get_category() else ''
+        })
+    
+    return JsonResponse({'products': results})
