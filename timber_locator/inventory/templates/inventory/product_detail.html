@@ -42,7 +42,9 @@
           <ul class="list-unstyled">
             <li class="mb-2"><strong>I/N Number:</strong> {{ object.in_number }}</li>
             <li class="mb-2"><strong>Price:</strong> ${{ object.price }}</li>
-            <li class="mb-2"><strong>Location:</strong> {{ object.location }}</li>
+            {% if object.note %}
+            <li class="mb-2"><strong>Note:</strong> {{ object.note }}</li>
+            {% endif %}
           </ul>
         </div>
       </div>

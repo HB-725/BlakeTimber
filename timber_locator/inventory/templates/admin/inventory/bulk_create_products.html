@@ -1,0 +1,401 @@
+{% extends "admin/base_site.html" %}
+{% load admin_urls static admin_modify %}
+
+{% block title %}{{ title }} | {{ site_title|default:"Django site admin" }}{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+    .classification-selection {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .classification-selection h3 {
+        margin-top: 0;
+        color: #495057;
+    }
+    
+    .selection-group {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    
+    .selection-group label {
+        font-weight: bold;
+        margin-right: 10px;
+        min-width: 80px;
+    }
+    
+    .selection-group select {
+        min-width: 300px;
+        padding: 8px 12px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        line-height: 1.5;
+        height: auto;
+        font-size: 14px;
+    }
+    
+    .products-section {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .products-section h3 {
+        margin-top: 0;
+        color: #495057;
+    }
+    
+    .add-row-btn {
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        margin-bottom: 15px;
+    }
+    
+    .add-row-btn:hover {
+        background: #218838;
+    }
+    
+    .add-row-btn:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+    }
+    
+    .bulk-products-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        display: none; /* Hidden initially */
+    }
+    
+    .bulk-products-table.show {
+        display: table;
+    }
+    
+    .bulk-products-table th,
+    .bulk-products-table td {
+        border: 1px solid #dee2e6;
+        padding: 8px;
+        text-align: left;
+        vertical-align: top;
+    }
+    
+    .bulk-products-table th {
+        background-color: #e9ecef;
+        font-weight: bold;
+    }
+    
+    .bulk-products-table tr:nth-child(even) {
+        background-color: #f8f9fa;
+    }
+    
+    .bulk-products-table input[type="text"],
+    .bulk-products-table input[type="number"],
+    .bulk-products-table input[type="url"] {
+        width: 100%;
+        padding: 5px 8px;
+        border: 1px solid #ced4da;
+        border-radius: 3px;
+        font-size: 13px;
+    }
+    
+    .remove-row-btn {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 4px 8px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 12px;
+    }
+    
+    .remove-row-btn:hover {
+        background: #c82333;
+    }
+    
+    .submit-row {
+        padding: 12px 14px;
+        margin: 0 0 20px;
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        text-align: right;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .default {
+        background: #0d6efd;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        text-decoration: none;
+        display: inline-block;
+        line-height: 1.5;
+    }
+    
+    .default:hover {
+        background: #0b5ed7;
+    }
+    
+    .cancel-link {
+        background: #0d6efd;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        text-decoration: none;
+        display: inline-block;
+        line-height: 1.5;
+    }
+    
+    .cancel-link:hover {
+        background: #5c636a;
+        color: white;
+        text-decoration: none;
+    }
+    
+    .help {
+        font-size: 11px;
+        color: #666;
+        margin-left: 5px;
+    }
+    
+    .errorlist {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        color: #dc3545;
+        font-size: 12px;
+    }
+    
+    .or-divider {
+        text-align: center;
+        font-weight: bold;
+        color: #6c757d;
+        margin: 0 10px;
+    }
+    
+    .no-selection-message {
+        color: #6c757d;
+        font-style: italic;
+        margin-top: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
+<form method="post" id="bulk-create-form">
+    {% csrf_token %}
+    
+    <!-- Classification Selection Section -->
+    <div class="classification-selection">
+        <h3>Step 1: Select Classification</h3>
+        <p>Choose either a <strong>Category</strong> (for direct products) OR a <strong>Profile</strong> (for profile-based products):</p>
+        
+        <div class="selection-group">
+            <label for="id_category">Category:</label>
+            <select name="category" id="id_category">
+                <option value="">Select Category</option>
+                {% for category in categories %}
+                    <option value="{{ category.id }}" {% if selected_category == category.id|stringformat:"s" %}selected{% endif %}>
+                        {{ category.name }}
+                    </option>
+                {% endfor %}
+            </select>
+            
+            <span class="or-divider">OR</span>
+            
+            <label for="id_profile">Profile:</label>
+            <select name="profile" id="id_profile">
+                <option value="">Select Profile</option>
+                {% for profile in profiles %}
+                    <option value="{{ profile.id }}" {% if selected_profile == profile.id|stringformat:"s" %}selected{% endif %}>
+                        {{ profile.category.name }} - {{ profile.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <p class="help">
+            <strong>Note:</strong> Categories are used for standalone products. 
+            Profiles are pre-defined product templates with specific dimensions.
+        </p>
+    </div>
+    
+    <!-- Product Creation Section -->
+    <div class="products-section">
+        <h3>Step 2: Add Products</h3>
+        <div id="selection-status">
+            <div class="no-selection-message">
+                Please select a category or profile above to start adding products.
+            </div>
+        </div>
+        
+        <button type="button" id="add-new-btn" class="add-row-btn" disabled>
+            + Add New Product
+        </button>
+        
+        <table class="bulk-products-table" id="products-table">
+            <thead>
+                <tr>
+                    <th>Option *</th>
+                    <th>I/N Number *</th>
+                    <th>Price *</th>
+                    <th>Note</th>
+                    <th>Image URL</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="products-tbody">
+                <!-- Dynamic rows will be added here -->
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="submit-row">
+        <input type="submit" value="Create Products" class="default" id="submit-btn" disabled />
+        <a href="{% url 'admin:inventory_product_changelist' %}" class="default">Cancel</a>
+    </div>
+    
+    <!-- Hidden fields for tracking products -->
+    <input type="hidden" name="product_count" id="product_count" value="0" />
+</form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const categorySelect = document.getElementById('id_category');
+    const profileSelect = document.getElementById('id_profile');
+    const addNewBtn = document.getElementById('add-new-btn');
+    const productsTable = document.getElementById('products-table');
+    const productsTbody = document.getElementById('products-tbody');
+    const submitBtn = document.getElementById('submit-btn');
+    const selectionStatus = document.getElementById('selection-status');
+    const productCountInput = document.getElementById('product_count');
+    
+    let productIndex = 0;
+    
+    function updateSelectionStatus() {
+        const categoryValue = categorySelect.value;
+        const profileValue = profileSelect.value;
+        
+        if (categoryValue || profileValue) {
+            const selectedName = categoryValue ? 
+                categorySelect.options[categorySelect.selectedIndex].text : 
+                profileSelect.options[profileSelect.selectedIndex].text;
+            
+            selectionStatus.innerHTML = `<strong>Selected:</strong> ${selectedName}`;
+            addNewBtn.disabled = false;
+        } else {
+            selectionStatus.innerHTML = '<div class="no-selection-message">Please select a category or profile above to start adding products.</div>';
+            addNewBtn.disabled = true;
+            productsTable.classList.remove('show');
+            productsTbody.innerHTML = '';
+            productIndex = 0;
+            updateSubmitButton();
+        }
+    }
+    
+    function updateSubmitButton() {
+        submitBtn.disabled = productsTbody.children.length === 0;
+        productCountInput.value = productsTbody.children.length;
+    }
+    
+    function addProductRow() {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>
+                <input type="text" name="product_${productIndex}_option" placeholder="e.g., 2.4m, 3600x1200mm" required />
+            </td>
+            <td>
+                <input type="text" name="product_${productIndex}_in_number" placeholder="Unique I/N" required />
+            </td>
+            <td>
+                <input type="number" name="product_${productIndex}_price" step="0.01" placeholder="0.00" required />
+            </td>
+            <td>
+                <input type="text" name="product_${productIndex}_note" placeholder="Optional notes" />
+            </td>
+            <td>
+                <input type="url" name="product_${productIndex}_image_url" placeholder="Optional image URL" />
+            </td>
+            <td>
+                <button type="button" class="remove-row-btn" onclick="removeProductRow(this)">Remove</button>
+            </td>
+        `;
+        
+        productsTbody.appendChild(row);
+        productIndex++;
+        
+        // Show table if first row
+        if (productsTbody.children.length === 1) {
+            productsTable.classList.add('show');
+        }
+        
+        updateSubmitButton();
+    }
+    
+    window.removeProductRow = function(button) {
+        const row = button.closest('tr');
+        row.remove();
+        
+        // Hide table if no rows
+        if (productsTbody.children.length === 0) {
+            productsTable.classList.remove('show');
+        }
+        
+        updateSubmitButton();
+    };
+    
+    // Ensure only one selection is made
+    categorySelect.addEventListener('change', function() {
+        if (this.value) {
+            profileSelect.value = '';
+        }
+        updateSelectionStatus();
+    });
+    
+    profileSelect.addEventListener('change', function() {
+        if (this.value) {
+            categorySelect.value = '';
+        }
+        updateSelectionStatus();
+    });
+    
+    addNewBtn.addEventListener('click', addProductRow);
+    
+    // Initialize
+    updateSelectionStatus();
+});
+</script>
+
+{% endblock %}

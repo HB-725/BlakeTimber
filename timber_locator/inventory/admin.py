@@ -1,5 +1,9 @@
 from django.contrib import admin
 from django.utils.html import format_html
+from django.shortcuts import render, redirect
+from django.urls import path, reverse
+from django.contrib import messages
+from django.http import HttpResponseRedirect
 from mptt.admin import DraggableMPTTAdmin
 from .models import Category, Profile, Product
 
@@ -81,6 +85,27 @@ class ProductPriceRangeFilter(admin.SimpleListFilter):
         if self.value() == 'expensive':
             return queryset.filter(price__gt=500)
 
+class ProductCategoryFilter(admin.SimpleListFilter):
+    title = 'Category'
+    parameter_name = 'category_filter'
+
+    def lookups(self, request, model_admin):
+        # Get all categories that are used by products (either directly or through profiles)
+        from django.db.models import Q
+        categories = Category.objects.filter(
+            Q(product__isnull=False) | Q(profile__product__isnull=False)
+        ).distinct().order_by('name')
+        
+        return [(cat.id, cat.name) for cat in categories]
+
+    def queryset(self, request, queryset):
+        if self.value():
+            # Filter products that have this category either directly or through profile
+            from django.db.models import Q
+            return queryset.filter(
+                Q(category_id=self.value()) | Q(profile__category_id=self.value())
+            )
+
 @admin.register(Category)
 class CategoryAdmin(DraggableMPTTAdmin):
     list_display = ('tree_actions', 'indented_title', 'slug', 'get_profile_count', 'has_image')
@@ -133,11 +158,153 @@ class ProfileAdmin(admin.ModelAdmin):
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = ('in_number', 'get_product_name', 'option', 'price', 'note', 'has_image', 'get_category')
-    list_filter = ('category', 'profile__category', 'profile', 'note', ProductPriceRangeFilter)
+    list_filter = (ProductCategoryFilter, 'profile', 'note', ProductPriceRangeFilter)
     search_fields = ('in_number', 'profile__name', 'category__name', 'profile__category__name', 'note', 'option')
-    ordering = ('category', 'profile__category', 'profile__name', 'option')
+    ordering = ('profile__category', 'profile__name', 'option')
     list_per_page = 50
     list_editable = ('option', 'price', 'note')
+    
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('bulk-create/', self.admin_site.admin_view(self.bulk_create_view), name='inventory_product_bulk_create'),
+        ]
+        return custom_urls + urls
+    
+    def bulk_create_view(self, request):
+        """Custom view for bulk creating products"""
+        context = {
+            'opts': self.model._meta,
+            'has_view_permission': self.has_view_permission(request),
+            'title': 'Bulk Create Products',
+        }
+        
+        if request.method == 'POST':
+            # Get the selected category or profile
+            category_id = request.POST.get('category')
+            profile_id = request.POST.get('profile')
+            product_count = int(request.POST.get('product_count', 0))
+            
+            # Validate that either category or profile is selected
+            if not category_id and not profile_id:
+                messages.error(request, 'Please select either a category or profile.')
+                context.update({
+                    'categories': Category.objects.all().order_by('name'),
+                    'profiles': Profile.objects.all().order_by('category__name', 'name'),
+                })
+                return render(request, 'admin/inventory/bulk_create_products.html', context)
+            
+            if category_id and profile_id:
+                messages.error(request, 'Please select only one - either category OR profile.')
+                context.update({
+                    'categories': Category.objects.all().order_by('name'),
+                    'profiles': Profile.objects.all().order_by('category__name', 'name'),
+                })
+                return render(request, 'admin/inventory/bulk_create_products.html', context)
+            
+            if product_count == 0:
+                messages.error(request, 'Please add at least one product.')
+                context.update({
+                    'categories': Category.objects.all().order_by('name'),
+                    'profiles': Profile.objects.all().order_by('category__name', 'name'),
+                    'selected_category': category_id,
+                    'selected_profile': profile_id,
+                })
+                return render(request, 'admin/inventory/bulk_create_products.html', context)
+            
+            # Process the product data
+            try:
+                created_count = 0
+                errors = []
+                category = Category.objects.get(id=category_id) if category_id else None
+                profile = Profile.objects.get(id=profile_id) if profile_id else None
+                
+                for i in range(product_count):
+                    option = request.POST.get(f'product_{i}_option', '').strip()
+                    in_number = request.POST.get(f'product_{i}_in_number', '').strip()
+                    price = request.POST.get(f'product_{i}_price', '').strip()
+                    note = request.POST.get(f'product_{i}_note', '').strip()
+                    image_url = request.POST.get(f'product_{i}_image_url', '').strip()
+                    
+                    # Skip empty rows
+                    if not option and not in_number and not price:
+                        continue
+                    
+                    # Validate required fields
+                    if not option:
+                        errors.append(f'Product {i+1}: Option is required')
+                        continue
+                    if not in_number:
+                        errors.append(f'Product {i+1}: I/N Number is required')
+                        continue
+                    if not price:
+                        errors.append(f'Product {i+1}: Price is required')
+                        continue
+                    
+                    # Check for duplicate I/N numbers
+                    if Product.objects.filter(in_number=in_number).exists():
+                        errors.append(f'Product {i+1}: I/N Number "{in_number}" already exists')
+                        continue
+                    
+                    # Validate price
+                    try:
+                        price_decimal = float(price)
+                        if price_decimal < 0:
+                            errors.append(f'Product {i+1}: Price must be positive')
+                            continue
+                    except ValueError:
+                        errors.append(f'Product {i+1}: Invalid price format')
+                        continue
+                    
+                    # Create the product
+                    product = Product(
+                        category=category,
+                        profile=profile,
+                        option=option,
+                        in_number=in_number,
+                        price=price_decimal,
+                        note=note,
+                        image_url=image_url
+                    )
+                    product.save()
+                    created_count += 1
+                
+                if errors:
+                    for error in errors:
+                        messages.error(request, error)
+                
+                if created_count > 0:
+                    messages.success(request, f'Successfully created {created_count} products.')
+                    if not errors:  # Only redirect if no errors
+                        return HttpResponseRedirect(reverse('admin:inventory_product_changelist'))
+                elif not errors:
+                    messages.warning(request, 'No products were created.')
+                    
+            except Exception as e:
+                messages.error(request, f'An error occurred: {str(e)}')
+            
+            # If there were errors, re-populate context
+            context.update({
+                'categories': Category.objects.all().order_by('name'),
+                'profiles': Profile.objects.all().order_by('category__name', 'name'),
+                'selected_category': category_id,
+                'selected_profile': profile_id,
+            })
+            return render(request, 'admin/inventory/bulk_create_products.html', context)
+        else:
+            # GET request - show the form
+            context.update({
+                'categories': Category.objects.all().order_by('name'),
+                'profiles': Profile.objects.all().order_by('category__name', 'name'),
+            })
+        
+        return render(request, 'admin/inventory/bulk_create_products.html', context)
+    
+    def changelist_view(self, request, extra_context=None):
+        """Override changelist to add bulk create button"""
+        extra_context = extra_context or {}
+        extra_context['bulk_create_url'] = reverse('admin:inventory_product_bulk_create')
+        return super().changelist_view(request, extra_context)
     
     fieldsets = (
         ('Basic Information', {
