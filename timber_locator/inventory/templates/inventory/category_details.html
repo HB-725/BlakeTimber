@@ -11,7 +11,7 @@
 <div class="container-fluid px-2 py-3">
   <div class="row g-3">
     {% for child in children %}
-    <div class="col-6">
+    <div class="col-6 col-sm-6 col-md-4 col-lg-3 col-xl-2 col-xxl-2">
       <a href="{% url 'category-detail' child.slug %}" class="text-decoration-none">
         <div class="card h-100">
           <div class="image-wrapper">
@@ -30,7 +30,7 @@
     {% endfor %}
     
     {% for profile in profiles %}
-    <div class="col-6">
+    <div class="col-6 col-sm-6 col-md-4 col-lg-3 col-xl-2 col-xxl-2">
       <a href="{% url 'profile-detail' profile.pk %}" class="text-decoration-none">
         <div class="card h-100">
           <div class="image-wrapper">
@@ -49,7 +49,7 @@
     {% endfor %}
     
     {% for product in direct_products %}
-    <div class="col-6">
+    <div class="col-6 col-sm-6 col-md-4 col-lg-3 col-xl-2 col-xxl-2">
       <a href="{% url 'product-detail' product.pk %}" class="text-decoration-none">
         <div class="card h-100">
           <div class="image-wrapper">
