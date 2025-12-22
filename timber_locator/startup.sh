@@ -1,13 +1,12 @@
 #!/bin/bash
+set -e
 
-# Install dependencies
-pip install -r requirements.txt
+echo "PORT=$PORT"
+echo "SQLITE_PATH=$SQLITE_PATH"
+echo "MEDIA_ROOT=$MEDIA_ROOT"
 
-# Collect static files
+python -m pip install -r requirements.txt
 python manage.py collectstatic --noinput
+python manage.py migrate --noinput
 
-# Run database migrations
-python manage.py migrate
-
-# Start Gunicorn
-gunicorn --bind 0.0.0.0:8000 --workers 4 timber_locator.wsgi:application
+gunicorn --bind 0.0.0.0:${PORT} --workers 2 timber_locator.wsgi:application
