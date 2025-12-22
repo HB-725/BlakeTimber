@@ -19,6 +19,12 @@ ALLOWED_HOSTS = [
     '[::1]',
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    "https://www.blaketimber.com",
+    "https://blaketimber.com",
+    "https://blaketimber-a7g3ctfjd4drhxdp.australiasoutheast-01.azurewebsites.net",
+]
+
 # Logging configuration
 LOGGING = {
     'version': 1,
