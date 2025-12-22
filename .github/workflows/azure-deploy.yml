@@ -53,7 +53,14 @@ jobs:
           path: |
             .
             !venv/
+            !.venv/
             !.git/
+            !**/*.sqlite3
+            !**/db.sqlite3
+            !**/django.log
+            !**/staticfiles/
+            !**/media/
+
 
   deploy:
     runs-on: ubuntu-latest
