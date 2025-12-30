@@ -168,13 +168,6 @@ document.addEventListener("DOMContentLoaded", function () {
           "</div>",
           "</div>",
           '<div class="flex justify-between items-end mt-2">',
-          '<div class="flex flex-col">',
-          product.price
-            ? '<span class="text-primary font-extrabold text-lg">$' +
-              escapeHtml(product.price) +
-              '<span class="text-slate-400 text-xs font-normal ml-0.5">/unit</span></span>'
-            : '<span class="text-slate-400 text-xs">Price on request</span>',
-          "</div>",
           '<span class="text-[10px] text-slate-400">I/N ' +
             escapeHtml(product.in_number) +
             "</span>",

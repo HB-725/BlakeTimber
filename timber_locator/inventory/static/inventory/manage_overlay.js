@@ -155,6 +155,7 @@ document.addEventListener("DOMContentLoaded", function () {
         .then(function () {
           swapToGuest();
           setStatus("Signed out successfully.", false);
+          fetch("/admin-mode/exit/");
         })
         .catch(function (error) {
           setStatus(error.message || "Logout failed.", true);

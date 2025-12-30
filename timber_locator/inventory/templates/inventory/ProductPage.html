@@ -94,6 +94,14 @@
         </button>
       </div>
     </header>
+    {% if user.is_authenticated and request.session.admin_mode %}
+    <div class="border-b border-amber-200 bg-amber-100/80 px-4 py-2">
+      <div class="flex items-center justify-center gap-2 text-amber-800 text-xs font-bold uppercase tracking-wider">
+        <span class="material-symbols-outlined text-[16px]">admin_panel_settings</span>
+        Admin Mode
+      </div>
+    </div>
+    {% endif %}
 
 
     {% if object.profile %}
@@ -170,7 +178,7 @@
         </div>
       </section>
 
-      {% if all_products and all_products.count > 1 %}
+      {% if all_products_count > 1 %}
       <section class="px-4 py-2">
         <div class="flex items-center justify-between mb-3 px-1">
           <h3 class="text-slate-800 dark:text-white text-base font-bold">Available Options</h3>
@@ -193,6 +201,44 @@
           </a>
           {% endif %}
           {% endfor %}
+          {% if user.is_authenticated and request.session.admin_mode %}
+          {% if object.profile %}
+          <a href="{% url 'add-product' %}?profile={{ object.profile.id }}" data-option-button
+            class="bg-white/60 py-2.5 px-3 rounded-lg border-2 border-dashed border-slate-300 text-slate-500 flex items-center justify-center text-center min-h-[44px] min-w-max hover:border-primary hover:text-primary transition">
+            <span class="material-symbols-outlined text-[18px]">add</span>
+          </a>
+          {% else %}
+          <a href="{% url 'add-product' %}?category={{ object.category.id }}" data-option-button
+            class="bg-white/60 py-2.5 px-3 rounded-lg border-2 border-dashed border-slate-300 text-slate-500 flex items-center justify-center text-center min-h-[44px] min-w-max hover:border-primary hover:text-primary transition">
+            <span class="material-symbols-outlined text-[18px]">add</span>
+          </a>
+          {% endif %}
+          {% endif %}
+        </div>
+      </section>
+      {% elif user.is_authenticated and request.session.admin_mode %}
+      <section class="px-4 py-2">
+        <div class="flex items-center justify-between mb-3 px-1">
+          <h3 class="text-slate-800 dark:text-white text-base font-bold">Available Options</h3>
+        </div>
+        <div class="flex flex-wrap gap-3" data-option-container>
+          <div data-option-button
+            class="bg-green-50 dark:bg-green-900/20 py-2.5 px-3 rounded-lg border-2 border-primary shadow-sm flex items-center justify-center text-center min-h-[44px] min-w-max">
+            <span class="text-sm font-semibold text-primary dark:text-primary-light leading-snug whitespace-nowrap">
+              {{ object.get_dimension_display }}
+            </span>
+          </div>
+          {% if object.profile %}
+          <a href="{% url 'add-product' %}?profile={{ object.profile.id }}" data-option-button
+            class="bg-white/60 py-2.5 px-3 rounded-lg border-2 border-dashed border-slate-300 text-slate-500 flex items-center justify-center text-center min-h-[44px] min-w-max hover:border-primary hover:text-primary transition">
+            <span class="material-symbols-outlined text-[18px]">add</span>
+          </a>
+          {% else %}
+          <a href="{% url 'add-product' %}?category={{ object.category.id }}" data-option-button
+            class="bg-white/60 py-2.5 px-3 rounded-lg border-2 border-dashed border-slate-300 text-slate-500 flex items-center justify-center text-center min-h-[44px] min-w-max hover:border-primary hover:text-primary transition">
+            <span class="material-symbols-outlined text-[18px]">add</span>
+          </a>
+          {% endif %}
         </div>
       </section>
       {% endif %}
@@ -203,6 +249,14 @@
     window.searchApiUrl = "{% url 'search-products' %}";
     window.productPageInNumber = "{{ object.in_number|escapejs }}";
   </script>
+{% if user.is_authenticated and request.session.admin_mode and not hide_admin_save %}
+  <a href="{% url 'admin-mode-exit' %}"
+    class="fixed bottom-6 left-1/2 z-50 flex items-center gap-2 -translate-x-1/2 rounded-full bg-primary px-5 py-3 text-white text-xs font-bold uppercase tracking-wider shadow-lg shadow-primary/30 hover:bg-primary-dark transition-colors"
+    aria-label="Finish">
+    <span class="material-symbols-outlined text-[18px]">check_circle</span>
+    Finish
+  </a>
+  {% endif %}
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
   <script src="{% static 'inventory/product_page.js' %}"></script>
   <script src="{% static 'inventory/search_page.js' %}"></script>

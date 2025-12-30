@@ -9,13 +9,13 @@
   <div class="mb-6">
     <!-- <h3 class="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-3">Subcategories</h3> -->
     <div class="grid grid-cols-2 gap-4 pb-6">
-      {% for child in children %}
+    {% for child in children %}
       <a href="{% url 'category-detail' slug=child.slug %}"
         class="group relative flex flex-col overflow-hidden rounded-xl bg-white dark:bg-[#1e2736] shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 transition-all hover:shadow-md hover:ring-primary/50 dark:hover:ring-primary/50 active:scale-[0.98]">
         <div class="aspect-[3/2] w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
-          {% if child.image_url %}
+          {% if child.get_display_image %}
           <div class="h-full w-full bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
-            style="background-image: url('{{ child.image_url }}');"></div>
+            style="background-image: url('{{ child.get_display_image }}');"></div>
           {% else %}
           <div class="h-full w-full bg-cover bg-center transition-transform duration-500 group-hover:scale-110"></div>
           {% endif %}
@@ -24,7 +24,18 @@
           <span class="text-sm font-bold leading-tight text-slate-900 dark:text-white">{{ child.name }}</span>
         </div>
       </a>
-      {% endfor %}
+    {% endfor %}
+    {% if user.is_authenticated and request.session.admin_mode %}
+    <a href="{% url 'add-category' %}?parent={{ object.id }}"
+      class="group relative flex h-full flex-col overflow-hidden rounded-xl bg-white text-slate-500 shadow-sm ring-1 ring-slate-200 transition-all hover:border-primary hover:ring-primary/50 hover:text-primary dark:bg-[#1e2736] dark:ring-slate-800 active:scale-[0.98] border-2 border-dashed border-slate-300 dark:border-slate-700">
+      <div class="aspect-[3/2] w-full flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+        <span class="material-symbols-outlined text-[28px]">add</span>
+      </div>
+      <div class="flex flex-1 flex-col justify-center p-3">
+        <span class="text-sm font-bold leading-tight uppercase tracking-wider">Add Sub-Category</span>
+      </div>
+    </a>
+    {% endif %}
     </div>
   </div>
   {% endif %}
@@ -32,7 +43,7 @@
   {% if profiles %}
   <div class="mb-6">
     <div class="grid grid-cols-2 gap-4 pb-6">
-      {% for profile in profiles %}
+    {% for profile in profiles %}
       <a href="{% url 'profile-detail' profile.pk %}"
         class="group relative flex flex-col overflow-hidden rounded-xl bg-white dark:bg-[#1e2736] shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 transition-all hover:shadow-md hover:ring-primary/50 dark:hover:ring-primary/50 active:scale-[0.98]">
         <div class="aspect-[3/2] w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
@@ -47,7 +58,18 @@
           <span class="text-sm font-bold leading-tight text-slate-900 dark:text-white">{{ profile.name }}</span>
         </div>
       </a>
-      {% endfor %}
+    {% endfor %}
+    {% if user.is_authenticated and request.session.admin_mode %}
+    <a href="{% url 'add-profile' %}?category={{ object.id }}"
+      class="group relative flex h-full flex-col overflow-hidden rounded-xl bg-white text-slate-500 shadow-sm ring-1 ring-slate-200 transition-all hover:border-primary hover:ring-primary/50 hover:text-primary dark:bg-[#1e2736] dark:ring-slate-800 active:scale-[0.98] border-2 border-dashed border-slate-300 dark:border-slate-700">
+      <div class="aspect-[3/2] w-full flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+        <span class="material-symbols-outlined text-[28px]">add</span>
+      </div>
+      <div class="flex flex-1 flex-col justify-center p-3">
+        <span class="text-sm font-bold leading-tight uppercase tracking-wider">Add Profile</span>
+      </div>
+    </a>
+    {% endif %}
     </div>
   </div>
   {% endif %}
@@ -56,7 +78,7 @@
   <div class="mb-6">
     <h3 class="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-3">Products</h3>
     <div class="grid grid-cols-2 gap-4 pb-6">
-      {% for product in direct_products %}
+    {% for product in direct_products %}
       <a href="{% url 'product-detail' product.pk %}"
         class="group relative flex flex-col overflow-hidden rounded-xl bg-white dark:bg-[#1e2736] shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 transition-all hover:shadow-md hover:ring-primary/50 dark:hover:ring-primary/50 active:scale-[0.98]">
         <div class="aspect-[3/2] w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
@@ -72,7 +94,52 @@
           <span class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ product.option }}</span>
         </div>
       </a>
-      {% endfor %}
+    {% endfor %}
+    {% if user.is_authenticated and request.session.admin_mode %}
+    <a href="{% url 'add-product' %}?category={{ object.id }}"
+      class="group relative flex h-full flex-col overflow-hidden rounded-xl bg-white text-slate-500 shadow-sm ring-1 ring-slate-200 transition-all hover:border-primary hover:ring-primary/50 hover:text-primary dark:bg-[#1e2736] dark:ring-slate-800 active:scale-[0.98] border-2 border-dashed border-slate-300 dark:border-slate-700">
+      <div class="aspect-[3/2] w-full flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+        <span class="material-symbols-outlined text-[28px]">add</span>
+      </div>
+      <div class="flex flex-1 flex-col justify-center p-3">
+        <span class="text-sm font-bold leading-tight uppercase tracking-wider">Add Product</span>
+      </div>
+    </a>
+    {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if user.is_authenticated and request.session.admin_mode and not children and not profiles and not direct_products %}
+  <div class="mb-6">
+    <div class="grid grid-cols-2 gap-4 pb-6">
+      <a href="{% url 'add-category' %}?parent={{ object.id }}"
+        class="group relative flex h-full flex-col overflow-hidden rounded-xl bg-white text-slate-500 shadow-sm ring-1 ring-slate-200 transition-all hover:border-primary hover:ring-primary/50 hover:text-primary dark:bg-[#1e2736] dark:ring-slate-800 active:scale-[0.98] border-2 border-dashed border-slate-300 dark:border-slate-700">
+        <div class="aspect-[3/2] w-full flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+          <span class="material-symbols-outlined text-[28px]">add</span>
+        </div>
+        <div class="flex flex-1 flex-col justify-center p-3">
+          <span class="text-sm font-bold leading-tight uppercase tracking-wider">Add Sub-Category</span>
+        </div>
+      </a>
+      <a href="{% url 'add-profile' %}?category={{ object.id }}"
+        class="group relative flex h-full flex-col overflow-hidden rounded-xl bg-white text-slate-500 shadow-sm ring-1 ring-slate-200 transition-all hover:border-primary hover:ring-primary/50 hover:text-primary dark:bg-[#1e2736] dark:ring-slate-800 active:scale-[0.98] border-2 border-dashed border-slate-300 dark:border-slate-700">
+        <div class="aspect-[3/2] w-full flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+          <span class="material-symbols-outlined text-[28px]">add</span>
+        </div>
+        <div class="flex flex-1 flex-col justify-center p-3">
+          <span class="text-sm font-bold leading-tight uppercase tracking-wider">Add Profile</span>
+        </div>
+      </a>
+      <a href="{% url 'add-product' %}?category={{ object.id }}"
+        class="group relative flex h-full flex-col overflow-hidden rounded-xl bg-white text-slate-500 shadow-sm ring-1 ring-slate-200 transition-all hover:border-primary hover:ring-primary/50 hover:text-primary dark:bg-[#1e2736] dark:ring-slate-800 active:scale-[0.98] border-2 border-dashed border-slate-300 dark:border-slate-700">
+        <div class="aspect-[3/2] w-full flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+          <span class="material-symbols-outlined text-[28px]">add</span>
+        </div>
+        <div class="flex flex-1 flex-col justify-center p-3">
+          <span class="text-sm font-bold leading-tight uppercase tracking-wider">Add Product</span>
+        </div>
+      </a>
     </div>
   </div>
   {% endif %}

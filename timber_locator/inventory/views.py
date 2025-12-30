@@ -1,15 +1,31 @@
 # inventory/views.py
 from django.views.generic import ListView, DetailView, TemplateView
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.http import JsonResponse
 from django.db.models import Q
 from django.contrib.auth import authenticate, login, logout
 from django.views.decorators.http import require_POST
+from django import forms
+from django.utils.text import slugify
+from django.urls import reverse
 from .models import Category, Profile, Product
+from .forms import CategoryForm, ProfileForm, ProductForm
 import logging
 import re
 
 logger = logging.getLogger(__name__)
+
+def _admin_mode_allowed(request):
+    return request.user.is_authenticated and request.session.get("admin_mode")
+
+def _unique_slug_for_category(name):
+    base = slugify(name) or "category"
+    slug = base
+    counter = 2
+    while Category.objects.filter(slug=slug).exists():
+        slug = f"{base}-{counter}"
+        counter += 1
+    return slug
 
 class HomePage(ListView):
     model = Category
@@ -28,7 +44,7 @@ class CategoryDetail(DetailView):
         
         # Get profiles and direct products for this category
         profiles = Profile.objects.filter(category=self.object)
-        direct_products = Product.objects.filter(category=self.object, profile__isnull=True)
+        direct_products = Product.objects.filter(category=self.object, profile__isnull=True).order_by('option')
         
         # If no profiles exist but direct products do, redirect to first product
         if not profiles.exists() and direct_products.exists():
@@ -52,24 +68,16 @@ class CategoryDetail(DetailView):
             # Get direct products for this category (not through profiles)
             direct_products = Product.objects.filter(category=self.object, profile__isnull=True)
             
-            # Sort profiles based on category type
+            # Sort profiles based on category type (original behavior)
             if 'plasterboard' in self.object.name.lower():
-                # For plasterboard, sort by length (first dimension)
-                print(f"Sorting plasterboard category: {self.object.name}")
                 context['profiles'] = sorted(profiles, key=lambda profile: profile.get_length())
-                print(f"Sorted profiles: {[p.name for p in context['profiles']]}")
             elif 'mdf' in self.object.name.lower():
-                # For MDF, sort by thickness (third dimension)
-                print(f"Sorting MDF category: {self.object.name}")
                 context['profiles'] = sorted(profiles, key=lambda profile: profile.get_thickness())
-                print(f"Sorted profiles: {[p.name for p in context['profiles']]}")
             else:
-                # For timber and other categories, sort by width (first dimension)
-                print(f"Sorting timber category: {self.object.name}")
                 context['profiles'] = sorted(profiles, key=lambda profile: profile.get_width())
             
             # Add direct products to context
-            context['direct_products'] = direct_products.order_by('option')
+            context['direct_products'] = list(direct_products.order_by('option'))
             
             logger.debug(f"Profiles: {context['profiles']}")
             logger.debug(f"Direct products: {context['direct_products']}")
@@ -101,21 +109,147 @@ class ProductDetail(DetailView):
         # Get all products with the same classification (either profile-based or category-based)
         if self.object.profile:
             # If this product has a profile, get all products with the same profile
-            context['all_products'] = Product.objects.filter(
+            all_products = Product.objects.filter(
                 profile=self.object.profile
             ).order_by('option')
         else:
             # If this product is directly linked to category, get all direct products in same category
-            context['all_products'] = Product.objects.filter(
+            all_products = Product.objects.filter(
                 category=self.object.category,
                 profile__isnull=True
             ).order_by('option')
-        
+
+        context['all_products'] = list(all_products)
+        context['all_products_count'] = len(context['all_products'])
         return context
+
+
+def add_category(request):
+    if not _admin_mode_allowed(request):
+        return redirect('home-page')
+
+    parent = None
+    parent_id = request.GET.get("parent")
+    if parent_id:
+        parent = get_object_or_404(Category, pk=parent_id)
+
+    if request.method == "POST":
+        form = CategoryForm(request.POST, request.FILES)
+        if parent:
+            form.instance.parent = parent
+        if form.is_valid():
+            form.instance.slug = _unique_slug_for_category(form.cleaned_data.get("name", ""))
+            form.save()
+            return redirect('category-detail', slug=form.instance.slug)
+    else:
+        form = CategoryForm(initial={"parent": parent} if parent else None)
+        if parent:
+            form.fields["parent"].widget = forms.HiddenInput()
+            form.fields["parent"].required = False
+
+    return render(request, "inventory/add_category.html", {
+        "form": form,
+        "parent_category": parent,
+        "back_url": reverse("category-detail", kwargs={"slug": parent.slug}) if parent else reverse("home-page"),
+        "hide_admin_save": True,
+    })
+
+
+def add_profile(request):
+    if not _admin_mode_allowed(request):
+        return redirect('home-page')
+
+    category = None
+    category_id = request.GET.get("category")
+    if category_id:
+        category = get_object_or_404(Category, pk=category_id)
+
+    if request.method == "POST":
+        form = ProfileForm(request.POST, request.FILES)
+        if category:
+            form.instance.category = category
+        if form.is_valid():
+            profile = form.save()
+            return redirect('category-detail', slug=profile.category.slug)
+    else:
+        form = ProfileForm(initial={"category": category} if category else None)
+        if category:
+            form.fields["category"].widget = forms.HiddenInput()
+            form.fields["category"].required = False
+
+    return render(request, "inventory/add_profile.html", {
+        "form": form,
+        "category": category,
+        "back_url": reverse("category-detail", kwargs={"slug": category.slug}) if category else reverse("home-page"),
+        "hide_admin_save": True,
+    })
+
+
+def add_product(request):
+    if not _admin_mode_allowed(request):
+        return redirect('home-page')
+
+    category = None
+    profile = None
+    category_id = request.GET.get("category")
+    profile_id = request.GET.get("profile")
+    if category_id:
+        category = get_object_or_404(Category, pk=category_id)
+    if profile_id:
+        profile = get_object_or_404(Profile, pk=profile_id)
+
+    if request.method == "POST":
+        form = ProductForm(request.POST, request.FILES)
+        if profile:
+            form.instance.profile = profile
+            form.instance.category = None
+        elif category:
+            form.instance.category = category
+            form.instance.profile = None
+        if form.is_valid():
+            product = form.save()
+            return redirect('product-detail', pk=product.pk)
+    else:
+        initial = {}
+        if profile:
+            initial["profile"] = profile
+        if category:
+            initial["category"] = category
+        form = ProductForm(initial=initial if initial else None)
+        if profile:
+            form.fields["profile"].widget = forms.HiddenInput()
+            form.fields["profile"].required = False
+            form.fields["category"].widget = forms.HiddenInput()
+            form.fields["category"].required = False
+        elif category:
+            form.fields["category"].widget = forms.HiddenInput()
+            form.fields["category"].required = False
+            form.fields["profile"].widget = forms.HiddenInput()
+            form.fields["profile"].required = False
+
+    return render(request, "inventory/add_product.html", {
+        "form": form,
+        "category": category,
+        "profile": profile,
+        "back_url": reverse("category-detail", kwargs={"slug": (profile.category.slug if profile else category.slug)}) if (profile or category) else reverse("home-page"),
+        "hide_admin_save": True,
+    })
 
 
 class SearchPage(TemplateView):
     template_name = 'inventory/SearchPage.html'
+
+
+def enter_admin_mode(request):
+    if request.user.is_authenticated:
+        request.session['admin_mode'] = True
+    return redirect('home-page')
+
+
+def exit_admin_mode(request):
+    if 'admin_mode' in request.session:
+        del request.session['admin_mode']
+    return redirect('home-page')
 
 
 @require_POST
@@ -133,6 +267,9 @@ def ajax_login(request):
 def ajax_logout(request):
     logout(request)
     return JsonResponse({'ok': True})
+
+
+@require_POST
 
 
 
@@ -304,7 +441,6 @@ def search_products(request):
             'option': product.get_dimension_display(),
             'category': category.name if category else '',
             'profile': product.profile.name if product.profile else '',
-            'price': str(product.price) if product.price is not None else '',
             'image_url': product.get_display_image() or '',
             'in_number': product.in_number,
         }
