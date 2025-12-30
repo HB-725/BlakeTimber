@@ -8,14 +8,14 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class CategoryList(ListView):
+class HomePage(ListView):
     model = Category
-    template_name = 'inventory/category_list.html'
+    template_name = 'inventory/HomePage.html'
     queryset = Category.objects.filter(parent__isnull=True)
 
 class CategoryDetail(DetailView):
     model = Category
-    template_name = 'inventory/category_details.html'
+    template_name = 'inventory/CategoryPage.html'
     slug_field = 'slug'
     slug_url_kwarg = 'slug'
 
@@ -90,7 +90,7 @@ class ProfileDetail(DetailView):
 
 class ProductDetail(DetailView):
     model = Product
-    template_name = 'inventory/product_detail.html'
+    template_name = 'inventory/ProductPage.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -109,6 +109,11 @@ class ProductDetail(DetailView):
             ).order_by('option')
         
         return context
+
+
+
+
+
 
 def search_products(request):
     """AJAX endpoint for product search with fuzzy matching"""

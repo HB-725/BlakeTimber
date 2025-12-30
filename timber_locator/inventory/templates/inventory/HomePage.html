@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <!-- Responsive viewport -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Custom stylesheet -->
+  <link href="{% static 'inventory/style.css' %}" rel="stylesheet">
+  <!-- HTMX for small interactivity -->
+  <script src="https://unpkg.com/htmx.org@1.9.2"></script>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#166534",
+            "background-light": "#f4f4f5",
+            "background-dark": "#101622",
+          },
+          fontFamily: {
+            "display": ["Inter", "sans-serif"]
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "2xl": "1rem",
+            "full": "9999px"
+          },
+        },
+      },
+    }
+  </script>
+
+  <title>BlakeTimber</title>
+</head>
+
+
+<body
+  class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-white min-h-screen flex flex-col overflow-x-hidden pb-[80px]">
+</body>
+
+
+<header
+  class="sticky top-0 z-40 w-full bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm border-b border-slate-200 dark:border-slate-800 transition-colors duration-300">
+  <div class="flex items-center justify-between px-4 py-3">
+    <div class="flex items-center gap-3">
+      <a href="{% url 'home-page' %}"
+        class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-white shadow-lg shadow-primary/30 hover:shadow-lg hover:shadow-primary/50 transition-all">
+        <img src="{% static 'image/BlakeTimberLogo.png' %}" alt="BlakeTimber Logo" class="h-9 w-9">
+      </a>
+      <a href="{% url 'home-page' %}"
+        class="text-xl font-bold tracking-tight text-slate-900 dark:text-white hover:opacity-80 transition-opacity">BlakeTimber</a>
+    </div>
+    <button aria-label="Search"
+      class="flex h-10 w-10 items-center justify-center rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors">
+      <i class="fas fa-search text-[18px]"></i>
+    </button>
+  </div>
+</header>
+
+<body
+  class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-white min-h-screen flex flex-col overflow-x-hidden pb-[80px]">
+
+
+  {% block content %}
+  <main class="flex-1 w-full px-4 pt-4">
+    {% with items=categories %}
+    {% include 'inventory/card_grid.html' %}
+    {% endwith %}
+  </main>
+  {% endblock %}
+
+
+
+
+
+  <nav
+    class="fixed bottom-0 left-0 right-0 z-50 h-[80px] border-t border-slate-200 dark:border-slate-800 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md safe-area-bottom">
+    <div class="grid h-16 grid-cols-3 items-center">
+      <a class="group flex flex-col items-center justify-center gap-1.5 px-2 py-1 text-primary" href="#">
+        <i class="fas fa-home text-[20px]"></i>
+        <span class="text-[11px] font-semibold">Home</span>
+      </a>
+      <a class="group flex flex-col items-center justify-center gap-1.5 px-2 py-1 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
+        href="#">
+        <i class="fas fa-wrench text-[20px] group-hover:scale-110 transition-transform"></i>
+        <span class="text-[11px] font-medium">Tool</span>
+      </a>
+      <a class="group flex flex-col items-center justify-center gap-1.5 px-2 py-1 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
+        href="#">
+        <i class="fas fa-cog text-[20px] group-hover:scale-110 transition-transform"></i>
+        <span class="text-[11px] font-medium">Manage</span>
+      </a>
+    </div>
+  </nav>
+</body>
+
+</html>

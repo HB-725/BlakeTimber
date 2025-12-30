@@ -19,6 +19,12 @@ ALLOWED_HOSTS = [
     '[::1]',
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    "https://www.blaketimber.com",
+    "https://blaketimber.com",
+    "https://blaketimber-a7g3ctfjd4drhxdp.australiasoutheast-01.azurewebsites.net",
+]
+
 # Logging configuration
 LOGGING = {
     'version': 1,
@@ -113,6 +119,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'inventory.context_processors.categories',
             ],
         },
     },

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>{{ object.get_name }}{% if object.get_dimension_display %} - {{ object.get_dimension_display }}{% endif %}
+  </title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+    rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#166534",
+            "primary-dark": "#14532d",
+            "primary-light": "#dcfce7",
+            "background-light": "#f4f4f5",
+            "background-dark": "#101622",
+          },
+          fontFamily: {
+            "display": ["Inter", "sans-serif"]
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "2xl": "1rem",
+            "3xl": "1.5rem",
+            "full": "9999px"
+          },
+          boxShadow: {
+            "soft": "0 4px 20px -2px rgba(0, 0, 0, 0.05)",
+          }
+        },
+      },
+    }
+  </script>
+  <style>
+    ::-webkit-scrollbar {
+      width: 0px;
+      height: 0px;
+      background: transparent;
+    }
+
+    .hide-scroll::-webkit-scrollbar {
+      display: none;
+    }
+
+    .hide-scroll {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    details>summary {
+      list-style: none;
+    }
+
+    details>summary::-webkit-details-marker {
+      display: none;
+    }
+
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+
+<body
+  class="font-display bg-background-light dark:bg-background-dark text-slate-900 dark:text-white antialiased transition-colors duration-200">
+  <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden pb-8">
+    <header
+      class="sticky top-0 z-40 w-full bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm border-b border-slate-200 dark:border-slate-800 transition-colors duration-300">
+      <div class="flex items-center justify-between px-4 py-3">
+        <div class="flex items-center gap-3">
+          <a href="{% url 'home-page' %}"
+            class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-white shadow-lg shadow-primary/30 hover:shadow-lg hover:shadow-primary/50 transition-all">
+            <img src="{% static 'image/BlakeTimberLogo.png' %}" alt="BlakeTimber Logo" class="h-9 w-9">
+          </a>
+          <a href="{% url 'home-page' %}"
+            class="text-xl font-bold tracking-tight text-slate-900 dark:text-white hover:opacity-80 transition-opacity">BlakeTimber</a>
+        </div>
+        <button aria-label="Search"
+          class="flex h-10 w-10 items-center justify-center rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors">
+          <i class="fas fa-search text-[18px]"></i>
+        </button>
+      </div>
+    </header>
+
+
+    <section class="mt-3 px-4">
+      <nav aria-label="Breadcrumb" class="border-b border-slate-200 pb-3">
+        <ol class="flex flex-wrap items-center gap-x-2 text-xs font-semibold text-slate-500">
+          <li>
+            <a href="{% url 'home-page' %}" class="text-slate-600 hover:text-primary">Home</a>
+          </li>
+          <li class="text-slate-300">›</li>
+          {% if object.profile %}
+          <li>
+            <a href="{% url 'category-detail' object.profile.category.slug %}"
+              class="text-slate-600 hover:text-primary">{{ object.profile.category.name }}</a>
+          </li>
+          <li class="text-slate-300">›</li>
+          <li>
+            <a href="{% url 'profile-detail' object.profile.pk %}"
+              class="text-slate-600 hover:text-primary">{{object.profile.name }}</a>
+          </li>
+          {% else %}
+          <li>
+            <a href="{% url 'category-detail' object.category.slug %}"
+              class="text-slate-600 hover:text-primary">{{object.category.name }}</a>
+          </li>
+          {% endif %}
+          {% if object.get_dimension_display %}
+          <li class="text-slate-300">›</li>
+          <li class="text-slate-900">{{ object.get_dimension_display }}</li>
+          {% endif %}
+        </ol>
+      </nav>
+    </section>
+
+
+
+    <main class="flex-1 w-full max-w-2xl mx-auto space-y-5">
+      <section
+        class="bg-white dark:bg-slate-900 rounded-b-3xl pb-3 overflow-hidden relative border-b border-slate-100 dark:border-slate-800">
+        <div class="w-full bg-slate-100 aspect-[16/10] relative flex items-center justify-center overflow-hidden mb-4">
+          {% if object.get_display_image %}
+          <div class="absolute inset-0 bg-center bg-cover transition-transform duration-700 hover:scale-105"
+            data-alt="{{ object.get_name }}" style='background-image: url("{{ object.get_display_image }}");'>
+          </div>
+          {% else %}
+          <div class="absolute inset-0 bg-center bg-cover"></div>
+          {% endif %}
+          <!-- <div class="absolute top-4 left-4 flex gap-2">
+            <span
+              class="inline-flex items-center rounded-full bg-white/70 dark:bg-slate-600/90 backdrop-blur px-3 py-1 text-xs font-bold text-slate-700 dark:text-slate-200 shadow-sm">
+              {% if object.profile %}
+              {{ object.profile.category.name }}
+              {% else %}
+              {{ object.category.name }}
+              {% endif %}
+            </span>
+            <span
+              class="inline-flex items-center rounded-full bg-green-100/90 dark:bg-green-900/90 backdrop-blur px-3 py-1 text-xs font-bold text-green-800 dark:text-green-300 shadow-sm">
+              {% if object.profile %}
+              {{ object.profile.name }}
+              {% elif object.get_dimension_display %}
+              {{ object.get_dimension_display }}
+              {% else %}
+              Catalog Item
+              {% endif %}
+            </span>
+          </div> -->
+        </div>
+        <div class="px-3 pb-2">
+          <div class="flex flex-col gap-1">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Product</span>
+            <div class="text-base font-semibold text-slate-900">
+              {% if object.profile %}
+              {{ object.profile.category.name }} {{ object.profile.name }} -
+              {% if object.get_dimension_display %}
+              {{object.get_dimension_display }}
+              {% endif %}
+              {% else %}
+              {{ object.category.name }}{% if object.get_dimension_display %} - {{ object.get_dimension_display }}
+              {% endif %}
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="px-4">
+        <div
+          class="w-full bg-white dark:bg-slate-800 rounded-xl p-5 flex flex-col items-center justify-center shadow-sm border border-slate-200 dark:border-slate-700">
+          <div class="w-full flex justify-between items-center mb-3">
+            <span class="text-slate-400 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1">
+              <span class="material-symbols-outlined text-[14px]">qr_code_scanner</span>
+              Item Number
+            </span>
+            <span
+              class="text-slate-900 dark:text-white font-mono text-xl font-bold tracking-widest">{{object.in_number}}</span>
+          </div>
+          <div aria-label="Barcode representation" class="w-full">
+            <svg id="barcode" class="w-full" role="img" aria-label="Barcode for {{ object.in_number }}"></svg>
+          </div>
+        </div>
+      </section>
+
+      {% if all_products and all_products.count > 1 %}
+      <section class="px-4 py-2">
+        <div class="flex items-center justify-between mb-3 px-1">
+          <h3 class="text-slate-800 dark:text-white text-base font-bold">Available Options</h3>
+        </div>
+        <div class="flex flex-wrap gap-3" data-option-container>
+          {% for product in all_products %}
+          {% if product.id == object.id %}
+          <div data-option-button
+            class="bg-green-50 dark:bg-green-900/20 py-2.5 px-3 rounded-lg border-2 border-primary shadow-sm flex items-center justify-center text-center min-h-[44px] min-w-max">
+            <span class="text-sm font-semibold text-primary dark:text-primary-light leading-snug whitespace-nowrap">
+              {{ product.get_dimension_display }}
+            </span>
+          </div>
+          {% else %}
+          <a href="{% url 'product-detail' product.id %}" data-option-button
+            class="bg-white dark:bg-slate-800 py-2.5 px-3 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-center text-center min-h-[44px] min-w-max hover:border-primary/50 hover:shadow-md transition">
+            <span class="text-sm font-semibold text-slate-900 dark:text-white leading-snug whitespace-nowrap">
+              {{ product.get_dimension_display }}
+            </span>
+          </a>
+          {% endif %}
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+    </main>
+  </div>
+  <script>
+    window.productPageInNumber = "{{ object.in_number|escapejs }}";
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+  <script src="{% static 'inventory/product_page.js' %}"></script>
+</body>
+
+</html>
