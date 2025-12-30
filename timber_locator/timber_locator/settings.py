@@ -1,5 +1,7 @@
 import os
+import re
 from pathlib import Path
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -19,23 +21,11 @@ CSRF_COOKIE_SECURE = os.environ.get("DJANGO_CSRF_COOKIE_SECURE", "True") == "Tru
 
 AZURE_HOSTNAME = os.environ.get("WEBSITE_HOSTNAME")  # e.g. blaketimber-xxxx.azurewebsites.net
 
-ALLOWED_HOSTS = [
-    "www.blaketimber.com",
-    "blaketimber.com",
-    AZURE_HOSTNAME,
-    "localhost",
-    "127.0.0.1",
-]
+ALLOWED_HOSTS = ["*"]
+
 
 # Remove None if WEBSITE_HOSTNAME isn't set (local)
 ALLOWED_HOSTS = [h for h in ALLOWED_HOSTS if h]
-
-# Custom host validation to allow 169.254.x.x health probes
-def is_allowed_host(host: str) -> bool:
-    host = host.split(":")[0]
-    if re.match(r"^169\.254\.\d+\.\d+$", host):
-        return True
-    return host in ALLOWED_HOSTS
 
 CSRF_TRUSTED_ORIGINS = [
     "https://www.blaketimber.com",
@@ -115,6 +105,7 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "inventory.middleware.AllowAzureProbesMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -123,6 +114,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
 
 ROOT_URLCONF = "timber_locator.urls"
 
