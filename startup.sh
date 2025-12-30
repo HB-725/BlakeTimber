@@ -9,7 +9,19 @@ echo "PORT=$PORT"
 echo "SQLITE_PATH=$SQLITE_PATH"
 echo "MEDIA_ROOT=$MEDIA_ROOT"
 
+
+echo "pwd=$(pwd)"
+echo "APP_PATH=${APP_PATH}"
+echo "Listing APP_DIR:"
+ls -la "$APP_DIR" || true
+
+
+
 cd "$APP_DIR"
+
+echo "Now in: $(pwd)"
+find . -maxdepth 3 -name manage.py -print || true
+
 
 # Activate venv created by Oryx inside the extracted app directory
 if [ -f "$APP_DIR/antenv/bin/activate" ]; then

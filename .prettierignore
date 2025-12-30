@@ -1,0 +1,2 @@
+# Ignore Django templates to avoid breaking template tags.
+timber_locator/**/templates/**/*.html

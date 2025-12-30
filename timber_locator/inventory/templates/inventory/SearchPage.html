@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Search</title>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+    rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#166534",
+            "primary-dark": "#14532d",
+            "primary-light": "#dcfce7",
+            "background-light": "#f4f4f5",
+            "background-dark": "#101622",
+            "surface-light": "#ffffff",
+            "surface-dark": "#1a2233",
+          },
+          fontFamily: {
+            "display": ["Inter", "sans-serif"]
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "2xl": "1rem",
+            "full": "9999px"
+          },
+          boxShadow: {
+            "soft": "0 4px 20px -2px rgba(0, 0, 0, 0.05)",
+          }
+        },
+      },
+    }
+  </script>
+  <style>
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+
+<body class="bg-background-light font-display text-slate-900 antialiased">
+  <div class="relative flex min-h-screen w-full flex-col mx-auto max-w-2xl bg-background-light overflow-hidden pb-24">
+    <header
+      class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+      <div class="flex items-center px-4 py-3 gap-3">
+        <a href="javascript:history.back()"
+          class="flex items-center justify-center text-slate-500 hover:text-primary transition-colors">
+          <span class="material-symbols-outlined text-2xl">arrow_back_ios_new</span>
+        </a>
+        <div class="flex-1 relative">
+          <div
+            class="flex w-full items-center rounded-xl bg-slate-50 h-12 border border-slate-200 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all">
+            <div class="pl-3.5 flex items-center justify-center text-slate-400">
+              <span class="material-symbols-outlined text-[22px]">search</span>
+            </div>
+            <input id="search-input"
+              class="w-full bg-transparent border-none focus:ring-0 text-base font-medium text-slate-900 placeholder:text-slate-400 h-full px-2"
+              placeholder="Search..." type="text" autocomplete="off" />
+            <button id="clear-search" type="button"
+              class="pr-3 flex items-center justify-center text-slate-400 hover:text-slate-600">
+              <span class="material-symbols-outlined text-[20px] fill-1">cancel</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="px-4 pb-3">
+        <div class="flex space-x-2 overflow-x-auto no-scrollbar">
+          <button data-filter="all"
+            class="shrink-0 rounded-lg bg-primary text-white px-4 py-2 text-[11px] font-semibold tracking-wide uppercase transition-transform active:scale-95 shadow-md shadow-primary/20">
+            All Results
+          </button>
+          <button data-filter="products"
+            class="shrink-0 rounded-lg bg-white text-slate-600 border border-slate-200 px-4 py-2 text-[11px] font-semibold tracking-wide uppercase hover:border-primary/50 hover:text-primary transition-colors active:bg-slate-50">
+            Products
+          </button>
+          <button data-filter="profiles"
+            class="shrink-0 rounded-lg bg-white text-slate-600 border border-slate-200 px-4 py-2 text-[11px] font-semibold tracking-wide uppercase hover:border-primary/50 hover:text-primary transition-colors active:bg-slate-50">
+            Profiles
+          </button>
+          <button data-filter="categories"
+            class="shrink-0 rounded-lg bg-white text-slate-600 border border-slate-200 px-4 py-2 text-[11px] font-semibold tracking-wide uppercase hover:border-primary/50 hover:text-primary transition-colors active:bg-slate-50">
+            Categories
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1 overflow-y-auto w-full p-4 space-y-6">
+      <div id="search-empty" class="text-sm text-slate-400">Type at least 2 characters to search.</div>
+
+      <section id="profiles-section" class="hidden">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-slate-800 text-sm font-bold uppercase tracking-wider">Matching Profiles</h3>
+        </div>
+        <div id="profiles-list" class="flex space-x-3 overflow-x-auto no-scrollbar pb-1 -mx-4 px-4"></div>
+      </section>
+
+      <section id="categories-section" class="hidden">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-slate-800 text-sm font-bold uppercase tracking-wider">Categories</h3>
+        </div>
+        <div id="categories-list" class="grid grid-cols-2 gap-3"></div>
+      </section>
+
+      <section id="products-section" class="hidden">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-slate-800 text-sm font-bold uppercase tracking-wider">Products</h3>
+          <span id="products-count"
+            class="bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full">0 Found</span>
+        </div>
+        <div id="products-list" class="flex flex-col gap-3"></div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    window.searchApiUrl = "{% url 'search-products' %}";
+  </script>
+  <script src="{% static 'inventory/search_page.js' %}"></script>
+</body>
+
+</html>
