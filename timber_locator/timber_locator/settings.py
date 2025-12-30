@@ -17,21 +17,33 @@ SESSION_COOKIE_SECURE = os.environ.get("DJANGO_SESSION_COOKIE_SECURE", "True") =
 CSRF_COOKIE_SECURE = os.environ.get("DJANGO_CSRF_COOKIE_SECURE", "True") == "True"
 
 
+AZURE_HOSTNAME = os.environ.get("WEBSITE_HOSTNAME")  # e.g. blaketimber-xxxx.azurewebsites.net
+
 ALLOWED_HOSTS = [
     "www.blaketimber.com",
     "blaketimber.com",
-    "blaketimber-a7g3ctfjd4drhxdp.australiasoutheast-01.azurewebsites.net",
-    "169.254.130.3",
+    AZURE_HOSTNAME,
     "localhost",
     "127.0.0.1",
 ]
 
+# Remove None if WEBSITE_HOSTNAME isn't set (local)
+ALLOWED_HOSTS = [h for h in ALLOWED_HOSTS if h]
+
+# Custom host validation to allow 169.254.x.x health probes
+def is_allowed_host(host: str) -> bool:
+    host = host.split(":")[0]
+    if re.match(r"^169\.254\.\d+\.\d+$", host):
+        return True
+    return host in ALLOWED_HOSTS
 
 CSRF_TRUSTED_ORIGINS = [
     "https://www.blaketimber.com",
     "https://blaketimber.com",
-    "https://blaketimber-a7g3ctfjd4drhxdp.australiasoutheast-01.azurewebsites.net",
+    f"https://{os.environ.get('WEBSITE_HOSTNAME')}",
 ]
+CSRF_TRUSTED_ORIGINS = [o for o in CSRF_TRUSTED_ORIGINS if o and "None" not in o]
+
 
 
 # Logging configuration
