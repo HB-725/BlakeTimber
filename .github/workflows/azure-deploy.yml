@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up Python
@@ -22,31 +22,31 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install dependencies (optional)
+      - name: Sanity check repo layout
         run: |
-          python -m venv venv
-          source venv/bin/activate
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          echo "Repo root:"
+          pwd
+          ls -la
+          echo "Find manage.py and startup.sh:"
+          find . -maxdepth 4 -name manage.py -print || true
+          find . -maxdepth 4 -name startup.sh -print || true
 
-      - name: Ensure startup script is executable
-        run: chmod +x startup.sh
-
-      # Optional sanity checks (won't fail deploy)
-      - name: Django check (optional)
-        working-directory: ./timber_locator
+      - name: Ensure startup script executable (if exists at repo root)
         run: |
-          source ../venv/bin/activate
-          python manage.py check
-        continue-on-error: true
+          if [ -f startup.sh ]; then chmod +x startup.sh; fi
 
       - name: Create deployment zip
         run: |
           zip -r app.zip . \
-            -x "venv/*" ".venv/*" ".git/*" \
+            -x ".git/*" "venv/*" ".venv/*" \
                "**/*.sqlite3" "**/db.sqlite3" "**/django.log"
 
-      - name: Upload zip artifact
+      - name: Inspect zip contents
+        run: |
+          ls -la app.zip
+          unzip -l app.zip | head -n 200
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: python-app
@@ -62,8 +62,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: python-app
+          path: .
 
-      - name: Deploy to Azure Web App (zip deploy)
+      - name: Inspect zip (deploy job)
+        run: |
+          ls -la
+          unzip -l app.zip | head -n 200
+
+      - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
