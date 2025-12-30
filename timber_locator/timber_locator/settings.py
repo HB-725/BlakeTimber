@@ -1,7 +1,5 @@
 import os
-import re
 from pathlib import Path
-
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -11,30 +9,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'your-secret-key-here')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
+DEBUG = True  # Temporarily set to True to see detailed error pages
 
 
-SECURE_SSL_REDIRECT = os.environ.get("DJANGO_SECURE_SSL_REDIRECT", "True") == "True"
-SESSION_COOKIE_SECURE = os.environ.get("DJANGO_SESSION_COOKIE_SECURE", "True") == "True"
-CSRF_COOKIE_SECURE = os.environ.get("DJANGO_CSRF_COOKIE_SECURE", "True") == "True"
-
-
-AZURE_HOSTNAME = os.environ.get("WEBSITE_HOSTNAME")  # e.g. blaketimber-xxxx.azurewebsites.net
-
-ALLOWED_HOSTS = ["*"]
-
-
-# Remove None if WEBSITE_HOSTNAME isn't set (local)
-ALLOWED_HOSTS = [h for h in ALLOWED_HOSTS if h]
+ALLOWED_HOSTS = [
+    'www.blaketimber.com', 'blaketimber.com',
+    'localhost',
+    '127.0.0.1',
+    '[::1]',
+]
 
 CSRF_TRUSTED_ORIGINS = [
     "https://www.blaketimber.com",
     "https://blaketimber.com",
-    f"https://{os.environ.get('WEBSITE_HOSTNAME')}",
+    "https://blaketimber-a7g3ctfjd4drhxdp.australiasoutheast-01.azurewebsites.net",
 ]
-CSRF_TRUSTED_ORIGINS = [o for o in CSRF_TRUSTED_ORIGINS if o and "None" not in o]
-
-
 
 # Logging configuration
 LOGGING = {
@@ -105,7 +94,6 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "inventory.middleware.AllowAzureProbesMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -114,7 +102,6 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
-
 
 ROOT_URLCONF = "timber_locator.urls"
 
@@ -132,7 +119,6 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'inventory.context_processors.categories',
             ],
         },
     },
@@ -213,7 +199,7 @@ MEDIA_ROOT = os.environ.get("MEDIA_ROOT") or (BASE_DIR / "media")
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Auth redirects for in-app admin login/logout.
-LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/'
-
+# Security Settings for local development
+SECURE_SSL_REDIRECT = False
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False

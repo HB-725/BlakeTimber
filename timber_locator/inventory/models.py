@@ -8,8 +8,6 @@ from mptt.models import MPTTModel, TreeForeignKey
 class Category(MPTTModel):
     name   = models.CharField(max_length=100, unique=True)
     slug   = models.SlugField(max_length=100, unique=True)
-    sort_order = models.PositiveIntegerField(default=0, editable=False, db_index=True)
-    image_file = models.FileField("Image File", upload_to="category_images/", blank=True, null=True)
     image_url = models.URLField("Image URL", max_length=500, blank=True, null=True)
 
     parent = TreeForeignKey(
@@ -20,13 +18,6 @@ class Category(MPTTModel):
     class MPTTMeta:
         order_insertion_by = ['name']
 
-    def get_display_image(self):
-        if self.image_file:
-            return self.image_file.url
-        if self.image_url:
-            return self.image_url
-        return None
-
     def __str__(self):
         return self.name
     
@@ -35,8 +26,6 @@ class Category(MPTTModel):
 class Profile(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     name     = models.CharField(max_length=50)  # e.g. "90 x 35 mm"
-    sort_order = models.PositiveIntegerField(default=0, editable=False, db_index=True)
-    image_file = models.FileField("Image File", upload_to="profile_images/", blank=True, null=True)
     image_url = models.URLField("Image URL", max_length=500, blank=True, null=True)
 
     def __str__(self):
@@ -107,12 +96,8 @@ class Profile(models.Model):
 
     def get_display_image(self):
         """Return profile image URL with category fallback"""
-        if self.image_file:
-            return self.image_file.url
         if self.image_url:
             return self.image_url
-        elif self.category and hasattr(self.category, "get_display_image"):
-            return self.category.get_display_image()
         elif self.category and self.category.image_url:
             return self.category.image_url
         else:
@@ -127,9 +112,8 @@ class Product(models.Model):
     profile   = models.ForeignKey(Profile, on_delete=models.CASCADE, blank=True, null=True)
     option    = models.CharField(max_length=100, help_text="Product option (length, size, or other specifications)")
     in_number = models.CharField("I/N Number", max_length=50, unique=True)
-    sort_order = models.PositiveIntegerField(default=0, editable=False, db_index=True)
+    price     = models.DecimalField(max_digits=8, decimal_places=2)
     note      = models.CharField(max_length=100, blank=True, null=True)
-    image_file = models.FileField("Image File", upload_to="product_images/", blank=True, null=True)
     image_url = models.URLField("Image URL", max_length=500, blank=True, null=True)
 
     def clean(self):
@@ -169,18 +153,12 @@ class Product(models.Model):
 
     def get_display_image(self):
         """Return image URL with fallback hierarchy: Product -> Profile -> Category"""
-        if self.image_file:
-            return self.image_file.url
         if self.image_url:
             return self.image_url
         elif self.profile and self.profile.image_url:
             return self.profile.image_url
-        elif self.profile and self.profile.category and hasattr(self.profile.category, "get_display_image"):
-            return self.profile.category.get_display_image()
         elif self.profile and self.profile.category and self.profile.category.image_url:
             return self.profile.category.image_url
-        elif self.category and hasattr(self.category, "get_display_image"):
-            return self.category.get_display_image()
         elif self.category and self.category.image_url:
             return self.category.image_url
         else:

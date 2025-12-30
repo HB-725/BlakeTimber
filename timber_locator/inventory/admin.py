@@ -63,6 +63,28 @@ class ProfileThicknessFilter(admin.SimpleListFilter):
         return queryset
 
 
+class ProductPriceRangeFilter(admin.SimpleListFilter):
+    title = 'Price Range'
+    parameter_name = 'price_range'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('budget', 'Under $50'),
+            ('moderate', '$50 - $200'),
+            ('premium', '$200 - $500'),
+            ('expensive', 'Over $500'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == 'budget':
+            return queryset.filter(price__lt=50)
+        if self.value() == 'moderate':
+            return queryset.filter(price__gte=50, price__lte=200)
+        if self.value() == 'premium':
+            return queryset.filter(price__gte=200, price__lte=500)
+        if self.value() == 'expensive':
+            return queryset.filter(price__gt=500)
+
 class ProductCategoryFilter(admin.SimpleListFilter):
     title = 'Category'
     parameter_name = 'category_filter'
@@ -135,12 +157,12 @@ class ProfileAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('in_number', 'get_product_name', 'option', 'note', 'has_image', 'get_category')
-    list_filter = (ProductCategoryFilter, 'profile', 'note')
+    list_display = ('in_number', 'get_product_name', 'option', 'price', 'note', 'has_image', 'get_category')
+    list_filter = (ProductCategoryFilter, 'profile', 'note', ProductPriceRangeFilter)
     search_fields = ('in_number', 'profile__name', 'category__name', 'profile__category__name', 'note', 'option')
     ordering = ('profile__category', 'profile__name', 'option')
     list_per_page = 50
-    list_editable = ('option', 'note')
+    list_editable = ('option', 'price', 'note')
     
     def get_urls(self):
         urls = super().get_urls()
@@ -200,11 +222,12 @@ class ProductAdmin(admin.ModelAdmin):
                 for i in range(product_count):
                     option = request.POST.get(f'product_{i}_option', '').strip()
                     in_number = request.POST.get(f'product_{i}_in_number', '').strip()
+                    price = request.POST.get(f'product_{i}_price', '').strip()
                     note = request.POST.get(f'product_{i}_note', '').strip()
                     image_url = request.POST.get(f'product_{i}_image_url', '').strip()
                     
                     # Skip empty rows
-                    if not option and not in_number:
+                    if not option and not in_number and not price:
                         continue
                     
                     # Validate required fields
@@ -214,9 +237,23 @@ class ProductAdmin(admin.ModelAdmin):
                     if not in_number:
                         errors.append(f'Product {i+1}: I/N Number is required')
                         continue
+                    if not price:
+                        errors.append(f'Product {i+1}: Price is required')
+                        continue
+                    
                     # Check for duplicate I/N numbers
                     if Product.objects.filter(in_number=in_number).exists():
                         errors.append(f'Product {i+1}: I/N Number "{in_number}" already exists')
+                        continue
+                    
+                    # Validate price
+                    try:
+                        price_decimal = float(price)
+                        if price_decimal < 0:
+                            errors.append(f'Product {i+1}: Price must be positive')
+                            continue
+                    except ValueError:
+                        errors.append(f'Product {i+1}: Invalid price format')
                         continue
                     
                     # Create the product
@@ -225,6 +262,7 @@ class ProductAdmin(admin.ModelAdmin):
                         profile=profile,
                         option=option,
                         in_number=in_number,
+                        price=price_decimal,
                         note=note,
                         image_url=image_url
                     )
@@ -280,8 +318,8 @@ class ProductAdmin(admin.ModelAdmin):
             'fields': ('option',),
             'description': 'Specify product dimensions, length, or other specifications (e.g., "3.6 m", "2400x1200mm", "4x8 feet") - REQUIRED'
         }),
-        ('Notes', {
-            'fields': ('note',)
+        ('Pricing & Notes', {
+            'fields': ('price', 'note')
         }),
         ('Media', {
             'fields': ('image_url',),

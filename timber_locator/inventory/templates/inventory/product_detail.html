@@ -1,0 +1,80 @@
+<!-- templates/inventory/product_detail.html -->
+{% extends "inventory/base.html" %}
+
+{% block breadcrumb %}
+{% if object.profile %}
+  <!-- Profile-based product breadcrumb with full category hierarchy -->
+  {% for ancestor in object.profile.category.get_ancestors %}
+    <li class="breadcrumb-item"><a href="{% url 'category-detail' ancestor.slug %}">{{ ancestor.name }}</a></li>
+  {% endfor %}
+  <li class="breadcrumb-item"><a href="{% url 'category-detail' object.profile.category.slug %}">{{ object.profile.category.name }}</a></li>
+  <li class="breadcrumb-item"><a href="{% url 'profile-detail' object.profile.pk %}">{{ object.profile.name }}</a></li>
+  <li class="breadcrumb-item active">{{ object.get_dimension_display }}</li>
+{% else %}
+  <!-- Direct product breadcrumb with full category hierarchy -->
+  {% for ancestor in object.category.get_ancestors %}
+    <li class="breadcrumb-item"><a href="{% url 'category-detail' ancestor.slug %}">{{ ancestor.name }}</a></li>
+  {% endfor %}
+  <li class="breadcrumb-item"><a href="{% url 'category-detail' object.category.slug %}">{{ object.category.name }}</a></li>
+  <li class="breadcrumb-item active">{{ object.get_dimension_display }}</li>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-2 py-3">
+  <div class="card">
+    <div class="card-body">
+      <!-- Product Image -->
+      {% if object.get_display_image %}
+      <div class="image-wrapper rounded mb-4" style="padding-top: 75%;">
+        <img src="{{ object.get_display_image }}" class="card-img-top" alt="{{ object.get_name }} - {{ object.get_dimension_display }}" style="object-fit: contain;">
+      </div>
+      {% endif %}
+
+      <!-- Product Details -->
+      {% if object.profile %}
+        <h6 class="card-title mb-4">{{ object.profile.category.name }} - {{ object.profile.name }}{% if object.get_dimension_display %} – {{ object.get_dimension_display }}{% endif %}</h6>
+      {% else %}
+        <h6 class="card-title mb-4">{{ object.category.name }}{% if object.get_dimension_display %} – {{ object.get_dimension_display }}{% endif %}</h6>
+      {% endif %}
+      <div class="row mb-4">
+        <div class="col-md-6">
+          <ul class="list-unstyled">
+            <li class="mb-2"><strong>I/N Number:</strong> {{ object.in_number }}</li>
+            <!-- <li class="mb-2"><strong>Price:</strong> ${{ object.price }}</li> -->
+            {% if object.note %}
+            <li class="mb-2"><strong>Note:</strong> {{ object.note }}</li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+
+      <!-- Length/Size Options -->
+      {% if all_products and all_products.count > 1 %}
+      <div class="mb-4">
+        <h6 class="mb-3">Available Options:</h6>
+        <div class="options-container">
+          {% for product in all_products %}
+            {% if product.id == object.id %}
+              <a href="#" class="btn btn-outline-dark current-length" onclick="return false;">
+                {{ product.get_dimension_display }}
+              </a>
+            {% else %}
+              <a href="{% url 'product-detail' product.id %}" 
+                 class="btn btn-outline-dark">
+                {{ product.get_dimension_display }}
+              </a>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Barcode -->
+      <div class="barcode-container mb-4">
+        {{ object.barcode_svg|safe }}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
