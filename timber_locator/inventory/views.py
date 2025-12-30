@@ -3,6 +3,8 @@ from django.views.generic import ListView, DetailView, TemplateView
 from django.shortcuts import get_object_or_404, redirect
 from django.http import JsonResponse
 from django.db.models import Q
+from django.contrib.auth import authenticate, login, logout
+from django.views.decorators.http import require_POST
 from .models import Category, Profile, Product
 import logging
 import re
@@ -114,6 +116,23 @@ class ProductDetail(DetailView):
 
 class SearchPage(TemplateView):
     template_name = 'inventory/SearchPage.html'
+
+
+@require_POST
+def ajax_login(request):
+    username = request.POST.get('username', '').strip()
+    password = request.POST.get('password', '')
+    user = authenticate(request, username=username, password=password)
+    if user is None:
+        return JsonResponse({'ok': False, 'error': 'Invalid username or password.'}, status=400)
+    login(request, user)
+    return JsonResponse({'ok': True})
+
+
+@require_POST
+def ajax_logout(request):
+    logout(request)
+    return JsonResponse({'ok': True})
 
 
 
@@ -310,4 +329,3 @@ def search_products(request):
             for category in categories
         ],
     })
-

@@ -34,12 +34,20 @@ document.addEventListener("DOMContentLoaded", function () {
   var overlay = document.querySelector("[data-search-overlay]");
   var openButtons = Array.from(document.querySelectorAll("[data-search-open]"));
   var closeButtons = Array.from(document.querySelectorAll("[data-search-close]"));
+  var manageOverlay = document.querySelector("[data-manage-overlay]");
+  var toolOverlay = document.querySelector("[data-tool-overlay]");
+  var navHome = document.querySelector("[data-nav-home]");
 
   if (!input || !clearButton) {
-    return;
+    // Allow overlay open/close even when the search UI is hidden.
+    input = null;
+    clearButton = null;
   }
 
   function setFilter(activeFilter) {
+    if (!filterButtons.length) {
+      return;
+    }
     filterButtons.forEach(function (button) {
       var isActive = button.dataset.filter === activeFilter;
       button.classList.toggle("bg-primary", isActive);
@@ -52,18 +60,24 @@ document.addEventListener("DOMContentLoaded", function () {
       button.classList.toggle("border-slate-200", !isActive);
     });
 
-    profilesSection.classList.toggle(
+    if (profilesSection) {
+      profilesSection.classList.toggle(
       "hidden",
       activeFilter !== "all" && activeFilter !== "profiles"
-    );
-    categoriesSection.classList.toggle(
+      );
+    }
+    if (categoriesSection) {
+      categoriesSection.classList.toggle(
       "hidden",
       activeFilter !== "all" && activeFilter !== "categories"
-    );
-    productsSection.classList.toggle(
+      );
+    }
+    if (productsSection) {
+      productsSection.classList.toggle(
       "hidden",
       activeFilter !== "all" && activeFilter !== "products"
-    );
+      );
+    }
   }
 
   if (filterButtons.length) {
@@ -75,6 +89,9 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function renderProfiles(profiles) {
+    if (!profilesList) {
+      return;
+    }
     profilesList.innerHTML = profiles
       .map(function (profile) {
         return [
@@ -96,6 +113,9 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function renderCategories(categories) {
+    if (!categoriesList) {
+      return;
+    }
     categoriesList.innerHTML = categories
       .map(function (category) {
         return [
@@ -116,6 +136,9 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function renderProducts(products) {
+    if (!productsList || !productsCount) {
+      return;
+    }
     productsCount.textContent = products.length + " Found";
     productsList.innerHTML = products
       .map(function (product) {
@@ -165,13 +188,24 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function updateSections(payload) {
+    if (!emptyState && !profilesSection && !categoriesSection && !productsSection) {
+      return;
+    }
     var hasResults =
       payload.products.length || payload.profiles.length || payload.categories.length;
-    emptyState.classList.toggle("hidden", hasResults || input.value.length >= 2);
+    if (emptyState && input) {
+      emptyState.classList.toggle("hidden", hasResults || input.value.length >= 2);
+    }
 
-    profilesSection.classList.toggle("hidden", !payload.profiles.length);
-    categoriesSection.classList.toggle("hidden", !payload.categories.length);
-    productsSection.classList.toggle("hidden", !payload.products.length);
+    if (profilesSection) {
+      profilesSection.classList.toggle("hidden", !payload.profiles.length);
+    }
+    if (categoriesSection) {
+      categoriesSection.classList.toggle("hidden", !payload.categories.length);
+    }
+    if (productsSection) {
+      productsSection.classList.toggle("hidden", !payload.products.length);
+    }
 
     renderProfiles(payload.profiles);
     renderCategories(payload.categories);
@@ -179,6 +213,9 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function runSearch() {
+    if (!input) {
+      return;
+    }
     var query = input.value.trim();
     if (query.length < 2) {
       updateSections({ products: [], profiles: [], categories: [] });
@@ -196,32 +233,64 @@ document.addEventListener("DOMContentLoaded", function () {
       });
   }
 
-  input.addEventListener("input", debounce(runSearch, 250));
-  clearButton.addEventListener("click", function () {
-    input.value = "";
-    updateSections({ products: [], profiles: [], categories: [] });
-    input.focus();
-  });
+  if (input) {
+    input.addEventListener("input", debounce(runSearch, 250));
+  }
+  if (clearButton && input) {
+    clearButton.addEventListener("click", function () {
+      input.value = "";
+      updateSections({ products: [], profiles: [], categories: [] });
+      input.focus();
+    });
+  }
 
   if (filterButtons.length) {
     setFilter("all");
+  }
+
+  function closeSearchOverlay() {
+    if (!overlay) {
+      return;
+    }
+    overlay.classList.add("hidden");
+    document.body.classList.remove("overflow-hidden");
   }
 
   if (overlay) {
     openButtons.forEach(function (button) {
       button.addEventListener("click", function (event) {
         event.preventDefault();
+        if (manageOverlay) {
+          manageOverlay.classList.add("hidden");
+        }
+        if (toolOverlay) {
+          toolOverlay.classList.add("hidden");
+        }
         overlay.classList.remove("hidden");
         document.body.classList.add("overflow-hidden");
-        input.focus();
+        if (input) {
+          input.focus();
+        }
       });
     });
 
     closeButtons.forEach(function (button) {
       button.addEventListener("click", function () {
-        overlay.classList.add("hidden");
-        document.body.classList.remove("overflow-hidden");
+        closeSearchOverlay();
       });
+    });
+  }
+
+  if (navHome) {
+    navHome.addEventListener("click", function (event) {
+      event.preventDefault();
+      closeSearchOverlay();
+      if (manageOverlay) {
+        manageOverlay.classList.add("hidden");
+      }
+      if (toolOverlay) {
+        toolOverlay.classList.add("hidden");
+      }
     });
   }
 });

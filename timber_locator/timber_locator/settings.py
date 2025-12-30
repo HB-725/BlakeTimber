@@ -200,6 +200,10 @@ MEDIA_ROOT = os.environ.get("MEDIA_ROOT") or (BASE_DIR / "media")
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Auth redirects for in-app admin login/logout.
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+
 # Security Settings for local development
 SECURE_SSL_REDIRECT = False
 SESSION_COOKIE_SECURE = False

@@ -68,7 +68,7 @@
     <div class="flex items-center gap-3">
       <a href="{% url 'home-page' %}"
         class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-white shadow-lg shadow-primary/30 hover:shadow-lg hover:shadow-primary/50 transition-all">
-        <img src="{% static 'image/BlakeTimberLogo.png' %}" alt="BlakeTimber Logo" class="h-9 w-9">
+        <span class="material-symbols-outlined text-[22px]">forest</span>
       </a>
       <a href="{% url 'home-page' %}"
         class="text-xl font-bold tracking-tight text-slate-900 dark:text-white hover:opacity-80 transition-opacity">BlakeTimber</a>
@@ -99,27 +99,31 @@
   <nav
     class="fixed bottom-0 left-0 right-0 z-50 h-[80px] border-t border-slate-200 dark:border-slate-800 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md safe-area-bottom">
     <div class="grid h-16 grid-cols-3 items-center">
-      <a class="group flex flex-col items-center justify-center gap-1.5 px-2 py-1 text-primary" href="#">
-        <i class="fas fa-home text-[20px]"></i>
-        <span class="text-[11px] font-semibold">Home</span>
-      </a>
-      <a class="group flex flex-col items-center justify-center gap-1.5 px-2 py-1 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
-        href="#">
+    <a class="group flex flex-col items-center justify-center gap-1.5 px-2 py-1 text-primary" href="#" data-nav-home>
+      <i class="fas fa-home text-[20px]"></i>
+      <span class="text-[11px] font-semibold">Home</span>
+    </a>
+    <a class="group flex flex-col items-center justify-center gap-1.5 px-2 py-1 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
+        href="#" data-tool-open data-nav-tool>
         <i class="fas fa-wrench text-[20px] group-hover:scale-110 transition-transform"></i>
         <span class="text-[11px] font-medium">Tool</span>
       </a>
       <a class="group flex flex-col items-center justify-center gap-1.5 px-2 py-1 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
-        href="#">
+        href="#" data-manage-open data-nav-manage>
         <i class="fas fa-cog text-[20px] group-hover:scale-110 transition-transform"></i>
         <span class="text-[11px] font-medium">Manage</span>
       </a>
     </div>
   </nav>
   {% include "inventory/_search_overlay.html" %}
+  {% include "inventory/_tool_overlay.html" %}
+  {% include "inventory/_manage_overlay.html" %}
   <script>
     window.searchApiUrl = "{% url 'search-products' %}";
   </script>
   <script src="{% static 'inventory/search_page.js' %}"></script>
+  <script src="{% static 'inventory/tool_overlay.js' %}"></script>
+  <script src="{% static 'inventory/manage_overlay.js' %}"></script>
 </body>
 
 </html>
