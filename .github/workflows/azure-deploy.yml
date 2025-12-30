@@ -21,7 +21,11 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
+<<<<<<< Updated upstream
       - name: Create and start virtual environment
+=======
+      - name: Install dependencies (optional)
+>>>>>>> Stashed changes
         run: |
           python -m venv venv
           source venv/bin/activate
@@ -31,14 +35,24 @@ jobs:
           source venv/bin/activate
           pip install --upgrade pip
           pip install -r requirements.txt
+<<<<<<< Updated upstream
         
       - name: Run tests (optional)
+=======
+
+      - name: Ensure startup script is executable
+        run: chmod +x startup.sh
+
+      # Optional sanity checks (won't fail deploy)
+      - name: Django check (optional)
+>>>>>>> Stashed changes
         working-directory: ./timber_locator
         run: |
           source ../venv/bin/activate
           python manage.py test --settings=timber_locator.settings
         continue-on-error: true
 
+<<<<<<< Updated upstream
       - name: Collect static files
         working-directory: ./timber_locator
         run: |
@@ -47,6 +61,15 @@ jobs:
         continue-on-error: true
 
       - name: Upload artifact for deployment jobs
+=======
+      - name: Create deployment zip
+        run: |
+          zip -r app.zip . \
+            -x "venv/*" ".venv/*" ".git/*" \
+               "**/*.sqlite3" "**/db.sqlite3" "**/django.log"
+
+      - name: Upload zip artifact
+>>>>>>> Stashed changes
         uses: actions/upload-artifact@v4
         with:
           name: python-app
@@ -77,8 +100,12 @@ jobs:
           name: python-app
           path: .
 
+<<<<<<< Updated upstream
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
+=======
+      - name: Deploy to Azure Web App (zip deploy)
+>>>>>>> Stashed changes
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
