@@ -11,23 +11,28 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'your-secret-key-here')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
 
+
 SECURE_SSL_REDIRECT = os.environ.get("DJANGO_SECURE_SSL_REDIRECT", "True") == "True"
 SESSION_COOKIE_SECURE = os.environ.get("DJANGO_SESSION_COOKIE_SECURE", "True") == "True"
 CSRF_COOKIE_SECURE = os.environ.get("DJANGO_CSRF_COOKIE_SECURE", "True") == "True"
 
 
 ALLOWED_HOSTS = [
-    'www.blaketimber.com', 'blaketimber.com',
-    'localhost',
-    '127.0.0.1',
-    '[::1]',
+    "www.blaketimber.com",
+    "blaketimber.com",
+    "blaketimber-a7g3ctfjd4drhxdp.australiasoutheast-01.azurewebsites.net",
+    "169.254.130.3",
+    "localhost",
+    "127.0.0.1",
 ]
+
 
 CSRF_TRUSTED_ORIGINS = [
     "https://www.blaketimber.com",
     "https://blaketimber.com",
     "https://blaketimber-a7g3ctfjd4drhxdp.australiasoutheast-01.azurewebsites.net",
 ]
+
 
 # Logging configuration
 LOGGING = {
