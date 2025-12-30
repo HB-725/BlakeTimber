@@ -1,21 +1,40 @@
 # inventory/views.py
-from django.views.generic import ListView, DetailView
-from django.shortcuts import get_object_or_404, redirect
+from django.views.generic import ListView, DetailView, TemplateView
+from django.shortcuts import get_object_or_404, redirect, render
 from django.http import JsonResponse
 from django.db.models import Q
+from django.contrib.auth import authenticate, login, logout
+from django.views.decorators.http import require_POST
+from django import forms
+from django.utils.text import slugify
+from django.urls import reverse
 from .models import Category, Profile, Product
+from .forms import CategoryForm, ProfileForm, ProductForm
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 
-class CategoryList(ListView):
+def _admin_mode_allowed(request):
+    return request.user.is_authenticated and request.session.get("admin_mode")
+
+def _unique_slug_for_category(name):
+    base = slugify(name) or "category"
+    slug = base
+    counter = 2
+    while Category.objects.filter(slug=slug).exists():
+        slug = f"{base}-{counter}"
+        counter += 1
+    return slug
+
+class HomePage(ListView):
     model = Category
-    template_name = 'inventory/category_list.html'
+    template_name = 'inventory/HomePage.html'
     queryset = Category.objects.filter(parent__isnull=True)
 
 class CategoryDetail(DetailView):
     model = Category
-    template_name = 'inventory/category_details.html'
+    template_name = 'inventory/CategoryPage.html'
     slug_field = 'slug'
     slug_url_kwarg = 'slug'
 
@@ -25,7 +44,7 @@ class CategoryDetail(DetailView):
         
         # Get profiles and direct products for this category
         profiles = Profile.objects.filter(category=self.object)
-        direct_products = Product.objects.filter(category=self.object, profile__isnull=True)
+        direct_products = Product.objects.filter(category=self.object, profile__isnull=True).order_by('option')
         
         # If no profiles exist but direct products do, redirect to first product
         if not profiles.exists() and direct_products.exists():
@@ -49,24 +68,16 @@ class CategoryDetail(DetailView):
             # Get direct products for this category (not through profiles)
             direct_products = Product.objects.filter(category=self.object, profile__isnull=True)
             
-            # Sort profiles based on category type
+            # Sort profiles based on category type (original behavior)
             if 'plasterboard' in self.object.name.lower():
-                # For plasterboard, sort by length (first dimension)
-                print(f"Sorting plasterboard category: {self.object.name}")
                 context['profiles'] = sorted(profiles, key=lambda profile: profile.get_length())
-                print(f"Sorted profiles: {[p.name for p in context['profiles']]}")
             elif 'mdf' in self.object.name.lower():
-                # For MDF, sort by thickness (third dimension)
-                print(f"Sorting MDF category: {self.object.name}")
                 context['profiles'] = sorted(profiles, key=lambda profile: profile.get_thickness())
-                print(f"Sorted profiles: {[p.name for p in context['profiles']]}")
             else:
-                # For timber and other categories, sort by width (first dimension)
-                print(f"Sorting timber category: {self.object.name}")
                 context['profiles'] = sorted(profiles, key=lambda profile: profile.get_width())
             
             # Add direct products to context
-            context['direct_products'] = direct_products.order_by('option')
+            context['direct_products'] = list(direct_products.order_by('option'))
             
             logger.debug(f"Profiles: {context['profiles']}")
             logger.debug(f"Direct products: {context['direct_products']}")
@@ -90,7 +101,7 @@ class ProfileDetail(DetailView):
 
 class ProductDetail(DetailView):
     model = Product
-    template_name = 'inventory/product_detail.html'
+    template_name = 'inventory/ProductPage.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -98,186 +109,359 @@ class ProductDetail(DetailView):
         # Get all products with the same classification (either profile-based or category-based)
         if self.object.profile:
             # If this product has a profile, get all products with the same profile
-            context['all_products'] = Product.objects.filter(
+            all_products = Product.objects.filter(
                 profile=self.object.profile
             ).order_by('option')
         else:
             # If this product is directly linked to category, get all direct products in same category
-            context['all_products'] = Product.objects.filter(
+            all_products = Product.objects.filter(
                 category=self.object.category,
                 profile__isnull=True
             ).order_by('option')
-        
+
+        context['all_products'] = list(all_products)
+        context['all_products_count'] = len(context['all_products'])
         return context
 
+
+def add_category(request):
+    if not _admin_mode_allowed(request):
+        return redirect('home-page')
+
+    parent = None
+    parent_id = request.GET.get("parent")
+    if parent_id:
+        parent = get_object_or_404(Category, pk=parent_id)
+
+    if request.method == "POST":
+        form = CategoryForm(request.POST, request.FILES)
+        if parent:
+            form.instance.parent = parent
+        if form.is_valid():
+            form.instance.slug = _unique_slug_for_category(form.cleaned_data.get("name", ""))
+            form.save()
+            return redirect('category-detail', slug=form.instance.slug)
+    else:
+        form = CategoryForm(initial={"parent": parent} if parent else None)
+        if parent:
+            form.fields["parent"].widget = forms.HiddenInput()
+            form.fields["parent"].required = False
+
+    return render(request, "inventory/add_category.html", {
+        "form": form,
+        "parent_category": parent,
+        "back_url": reverse("category-detail", kwargs={"slug": parent.slug}) if parent else reverse("home-page"),
+        "hide_admin_save": True,
+    })
+
+
+def add_profile(request):
+    if not _admin_mode_allowed(request):
+        return redirect('home-page')
+
+    category = None
+    category_id = request.GET.get("category")
+    if category_id:
+        category = get_object_or_404(Category, pk=category_id)
+
+    if request.method == "POST":
+        form = ProfileForm(request.POST, request.FILES)
+        if category:
+            form.instance.category = category
+        if form.is_valid():
+            profile = form.save()
+            return redirect('category-detail', slug=profile.category.slug)
+    else:
+        form = ProfileForm(initial={"category": category} if category else None)
+        if category:
+            form.fields["category"].widget = forms.HiddenInput()
+            form.fields["category"].required = False
+
+    return render(request, "inventory/add_profile.html", {
+        "form": form,
+        "category": category,
+        "back_url": reverse("category-detail", kwargs={"slug": category.slug}) if category else reverse("home-page"),
+        "hide_admin_save": True,
+    })
+
+
+def add_product(request):
+    if not _admin_mode_allowed(request):
+        return redirect('home-page')
+
+    category = None
+    profile = None
+    category_id = request.GET.get("category")
+    profile_id = request.GET.get("profile")
+    if category_id:
+        category = get_object_or_404(Category, pk=category_id)
+    if profile_id:
+        profile = get_object_or_404(Profile, pk=profile_id)
+
+    if request.method == "POST":
+        form = ProductForm(request.POST, request.FILES)
+        if profile:
+            form.instance.profile = profile
+            form.instance.category = None
+        elif category:
+            form.instance.category = category
+            form.instance.profile = None
+        if form.is_valid():
+            product = form.save()
+            return redirect('product-detail', pk=product.pk)
+    else:
+        initial = {}
+        if profile:
+            initial["profile"] = profile
+        if category:
+            initial["category"] = category
+        form = ProductForm(initial=initial if initial else None)
+        if profile:
+            form.fields["profile"].widget = forms.HiddenInput()
+            form.fields["profile"].required = False
+            form.fields["category"].widget = forms.HiddenInput()
+            form.fields["category"].required = False
+        elif category:
+            form.fields["category"].widget = forms.HiddenInput()
+            form.fields["category"].required = False
+            form.fields["profile"].widget = forms.HiddenInput()
+            form.fields["profile"].required = False
+
+    return render(request, "inventory/add_product.html", {
+        "form": form,
+        "category": category,
+        "profile": profile,
+        "back_url": reverse("category-detail", kwargs={"slug": (profile.category.slug if profile else category.slug)}) if (profile or category) else reverse("home-page"),
+        "hide_admin_save": True,
+    })
+
+
+class SearchPage(TemplateView):
+    template_name = 'inventory/SearchPage.html'
+
+
+def enter_admin_mode(request):
+    if request.user.is_authenticated:
+        request.session['admin_mode'] = True
+    return redirect('home-page')
+
+
+def exit_admin_mode(request):
+    if 'admin_mode' in request.session:
+        del request.session['admin_mode']
+    return redirect('home-page')
+
+
+@require_POST
+def ajax_login(request):
+    username = request.POST.get('username', '').strip()
+    password = request.POST.get('password', '')
+    user = authenticate(request, username=username, password=password)
+    if user is None:
+        return JsonResponse({'ok': False, 'error': 'Invalid username or password.'}, status=400)
+    login(request, user)
+    return JsonResponse({'ok': True})
+
+
+@require_POST
+def ajax_logout(request):
+    logout(request)
+    return JsonResponse({'ok': True})
+
+
+@require_POST
+
+
+
+
 def search_products(request):
-    """AJAX endpoint for product search with fuzzy matching"""
     query = request.GET.get('q', '').strip()
-    
+
     if not query or len(query) < 2:
-        return JsonResponse({'products': []})
-    
-    # Split search query into individual terms for fuzzy matching
-    search_terms = [term.strip() for term in query.split() if term.strip()]
-    
-    if not search_terms:
-        return JsonResponse({'products': []})
-    
-    # Start with all products
-    products = Product.objects.select_related('profile', 'category', 'profile__category')
-    
-    # Create a comprehensive OR filter that searches across all fields for any term
-    # This makes the search much more flexible and user-friendly
-    master_filter = Q()
-    
+        return JsonResponse({'products': [], 'profiles': [], 'categories': []})
+
+    raw_terms = [term for term in query.split() if term]
+
+    def term_variants(term):
+        variants = {term}
+        cleaned = term.lower().replace('×', 'x')
+        variants.add(cleaned)
+        digits_only = ''.join(ch for ch in cleaned if ch.isdigit())
+        if digits_only:
+            variants.add(digits_only)
+        if cleaned.endswith('mm'):
+            variants.add(cleaned[:-2])
+        elif cleaned.endswith('m'):
+            variants.add(cleaned[:-1])
+        if 'x' in cleaned:
+            variants.add(cleaned.replace('x', ' x '))
+        return [v for v in variants if v]
+
+    def term_unit(term):
+        cleaned = term.lower().replace('×', 'x')
+        if cleaned.endswith('mm'):
+            return 'mm'
+        if cleaned.endswith('m'):
+            return 'm'
+        return ''
+
+    search_terms = raw_terms
+
+    product_filter = Q()
     for term in search_terms:
-        term_filter = (
-            Q(option__icontains=term) |
-            Q(profile__name__icontains=term) |
-            Q(category__name__icontains=term) |
-            Q(profile__category__name__icontains=term) |
-            Q(note__icontains=term)
+        variants = term_variants(term)
+        unit = term_unit(term)
+        term_filter = Q()
+        for variant in variants:
+            if unit == 'm':
+                term_filter |= (
+                    Q(option__icontains=variant) |
+                    Q(note__icontains=variant)
+                )
+            else:
+                term_filter |= (
+                    Q(option__icontains=variant) |
+                    Q(note__icontains=variant) |
+                    Q(profile__name__icontains=variant) |
+                    Q(category__name__icontains=variant) |
+                    Q(profile__category__name__icontains=variant)
+                )
+        product_filter &= term_filter
+
+    products = Product.objects.select_related(
+        'category',
+        'profile',
+        'profile__category'
+    ).filter(product_filter).distinct()[:50]
+
+    profile_filter = Q()
+    for term in search_terms:
+        if term_unit(term) == 'm':
+            continue
+        variants = term_variants(term)
+        term_filter = Q()
+        for variant in variants:
+            term_filter |= (
+                Q(name__icontains=variant) |
+                Q(category__name__icontains=variant)
+            )
+        profile_filter &= term_filter
+
+    profiles = Profile.objects.select_related('category').filter(profile_filter).distinct()[:30]
+
+    category_filter = Q()
+    for term in search_terms:
+        if term_unit(term) == 'm':
+            continue
+        variants = term_variants(term)
+        term_filter = Q()
+        for variant in variants:
+            term_filter |= Q(name__icontains=variant)
+        category_filter &= term_filter
+
+    categories = Category.objects.filter(category_filter).distinct()[:30]
+
+    def normalize_keep_x(value):
+        return ''.join(
+            ch for ch in value.lower().replace('×', 'x')
+            if ch.isalnum() or ch == 'x'
         )
-        master_filter |= term_filter
-    
-    # Apply the combined filter
-    products = products.filter(master_filter)
-    
-    # Limit results and convert to list
-    products = list(products[:100])  # Get more results for better scoring
-    
-    # Score and sort results by relevance
-    def calculate_relevance_score(product, search_terms):
-        score = 0
-        
-        # Get all searchable text for this product (excluding I/N number, price, image_url)
-        # Priority order: category > profile > option > note
-        category_text = ''
-        profile_text = ''
+
+    def normalize_digits(value):
+        return ''.join(ch for ch in value.lower() if ch.isalnum())
+
+    query_with_x = normalize_keep_x('x'.join(search_terms))
+    query_compact = normalize_digits(''.join(search_terms))
+    query_numbers = [int(term) for term in search_terms if term.isdigit()]
+
+    def extract_numbers(value):
+        return [int(match) for match in re.findall(r'\d+', value)]
+
+    def extract_numbers_float(value):
+        return [float(match) for match in re.findall(r'\d+(?:\.\d+)?', value)]
+
+    def score_product(product):
         option_text = product.option or ''
-        note_text = product.note or ''
-        
-        # Get category text (highest priority)
-        if product.category:
-            category_text = product.category.name
-        elif product.profile and product.profile.category:
-            category_text = product.profile.category.name
-            
-        # Get profile text (second highest priority)
-        if product.profile:
-            profile_text = product.profile.name
-        
-        # Track matches for bonus calculation
-        exact_category_matches = 0
-        exact_profile_matches = 0
-        exact_option_matches = 0
-        exact_note_matches = 0
-        
-        partial_category_matches = 0
-        partial_profile_matches = 0
-        partial_option_matches = 0
-        partial_note_matches = 0
-        
+        profile_text = product.profile.name if product.profile else ''
+        category_text = product.get_category().name if product.get_category() else ''
+
+        option_norm = normalize_keep_x(option_text)
+        profile_norm = normalize_keep_x(profile_text)
+        category_norm = normalize_keep_x(category_text)
+        option_compact = normalize_digits(option_text)
+        profile_compact = normalize_digits(profile_text)
+
+        score = 0
+        if len(query_numbers) >= 2:
+            target_first, target_second = query_numbers[0], query_numbers[1]
+            source_text = option_text or profile_text
+            item_numbers = extract_numbers(source_text)
+            if len(item_numbers) >= 2:
+                item_first, item_second = item_numbers[0], item_numbers[1]
+                if item_first == target_first and item_second == target_second:
+                    score += 20000
+                elif item_second == target_second:
+                    score += max(0, 12000 - abs(item_first - target_first) * 10)
+        if len(query_numbers) >= 3:
+            target_third = float(query_numbers[2])
+            option_numbers = extract_numbers_float(option_text)
+            if len(option_numbers) >= 1:
+                option_last = option_numbers[-1]
+                if abs(option_last - target_third) < 0.01:
+                    score += 15000
+                else:
+                    score += max(0, 6000 - abs(option_last - target_third) * 1000)
+        if query_with_x and query_with_x in option_norm:
+            score += 1000
+        if query_with_x and query_with_x in profile_norm:
+            score += 800
+        if query_compact and query_compact in option_compact:
+            score += 700
+        if query_compact and query_compact in profile_compact:
+            score += 600
+        if query_with_x and query_with_x in category_norm:
+            score += 200
         for term in search_terms:
-            term_lower = term.lower().strip()
-            
-            # CATEGORY MATCHES (highest weight - 1000 base)
-            if category_text:
-                category_lower = category_text.lower()
-                category_words = category_lower.split()
-                
-                # Exact word match in category
-                if term_lower in category_words:
-                    score += 1000
-                    exact_category_matches += 1
-                # Partial match in category (much lower but still significant)
-                elif term_lower in category_lower:
-                    score += 200
-                    partial_category_matches += 1
-            
-            # PROFILE MATCHES (second highest weight - 500 base)
-            if profile_text:
-                profile_lower = profile_text.lower()
-                profile_words = profile_lower.split()
-                
-                # Exact word match in profile
-                if term_lower in profile_words:
-                    score += 500
-                    exact_profile_matches += 1
-                # Partial match in profile
-                elif term_lower in profile_lower:
-                    score += 100
-                    partial_profile_matches += 1
-            
-            # OPTION MATCHES (third priority - 100 base)
-            if option_text:
-                option_lower = option_text.lower()
-                option_words = option_lower.split()
-                
-                # Exact word match in option
-                if term_lower in option_words:
-                    score += 100
-                    exact_option_matches += 1
-                # Partial match in option
-                elif term_lower in option_lower:
-                    score += 20
-                    partial_option_matches += 1
-            
-            # NOTE MATCHES (lowest priority - 50 base)
-            if note_text:
-                note_lower = note_text.lower()
-                note_words = note_lower.split()
-                
-                # Exact word match in note
-                if term_lower in note_words:
-                    score += 50
-                    exact_note_matches += 1
-                # Partial match in note
-                elif term_lower in note_lower:
-                    score += 10
-                    partial_note_matches += 1
-        
-        # MASSIVE bonuses for comprehensive exact matches
-        total_terms = len(search_terms)
-        total_exact_matches = exact_category_matches + exact_profile_matches + exact_option_matches + exact_note_matches
-        
-        # Huge bonus if all terms have exact matches somewhere
-        if total_exact_matches >= total_terms:
-            score += 5000
-        
-        # Extra bonuses based on where exact matches occur
-        if exact_category_matches > 0:
-            score += exact_category_matches * 500  # Big bonus for category matches
-        if exact_profile_matches > 0:
-            score += exact_profile_matches * 250   # Good bonus for profile matches
-        if exact_option_matches > 0:
-            score += exact_option_matches * 100    # Moderate bonus for option matches
-        
+            term_lower = term.lower()
+            if term_lower in option_text.lower():
+                score += 40
+            if term_lower in profile_text.lower():
+                score += 30
+            if term_lower in category_text.lower():
+                score += 10
         return score
-    
-    # Score all products and sort by relevance
-    scored_products = []
-    for product in products:
-        score = calculate_relevance_score(product, search_terms)
-        if score > 0:  # Only include products with some relevance
-            scored_products.append((score, product))
-    
-    # Sort by score (highest first) and limit to 20 results
-    scored_products.sort(key=lambda x: x[0], reverse=True)
-    final_products = [product for score, product in scored_products[:20]]
-    
-    results = []
-    for product in final_products:
-        results.append({
+
+    products = sorted(list(products), key=score_product, reverse=True)
+
+    def product_payload(product):
+        category = product.category or (product.profile.category if product.profile else None)
+        return {
             'id': product.id,
             'name': product.get_name(),
-            'option': product.option or '',
+            'option': product.get_dimension_display(),
+            'category': category.name if category else '',
+            'profile': product.profile.name if product.profile else '',
+            'image_url': product.get_display_image() or '',
             'in_number': product.in_number,
-            'price': str(product.price),
-            'note': product.note or '',
-            'image_url': product.get_display_image(),
-            'url': f'/product/{product.id}/',
-            'category': product.get_category().name if product.get_category() else ''
-        })
-    
-    return JsonResponse({'products': results})
+        }
+
+    return JsonResponse({
+        'products': [product_payload(product) for product in products],
+        'profiles': [
+            {
+                'id': profile.id,
+                'name': profile.name,
+                'category': profile.category.name,
+                'category_slug': profile.category.slug,
+            }
+            for profile in profiles
+        ],
+        'categories': [
+            {
+                'id': category.id,
+                'name': category.name,
+                'slug': category.slug,
+            }
+            for category in categories
+        ],
+    })

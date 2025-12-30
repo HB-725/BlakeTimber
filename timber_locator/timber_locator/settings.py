@@ -119,6 +119,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'inventory.context_processors.categories',
             ],
         },
     },
@@ -198,6 +199,10 @@ MEDIA_ROOT = os.environ.get("MEDIA_ROOT") or (BASE_DIR / "media")
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Auth redirects for in-app admin login/logout.
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
 
 # Security Settings for local development
 SECURE_SSL_REDIRECT = False
