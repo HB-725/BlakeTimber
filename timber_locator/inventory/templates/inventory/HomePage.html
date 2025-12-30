@@ -8,6 +8,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+    rel="stylesheet">
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- Custom stylesheet -->
@@ -40,6 +42,16 @@
       },
     }
   </script>
+  <style>
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
 
   <title>BlakeTimber</title>
 </head>
@@ -61,7 +73,7 @@
       <a href="{% url 'home-page' %}"
         class="text-xl font-bold tracking-tight text-slate-900 dark:text-white hover:opacity-80 transition-opacity">BlakeTimber</a>
     </div>
-    <button aria-label="Search"
+    <button aria-label="Search" data-search-open
       class="flex h-10 w-10 items-center justify-center rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors">
       <i class="fas fa-search text-[18px]"></i>
     </button>
@@ -103,6 +115,11 @@
       </a>
     </div>
   </nav>
+  {% include "inventory/_search_overlay.html" %}
+  <script>
+    window.searchApiUrl = "{% url 'search-products' %}";
+  </script>
+  <script src="{% static 'inventory/search_page.js' %}"></script>
 </body>
 
 </html>
