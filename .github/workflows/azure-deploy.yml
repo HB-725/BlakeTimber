@@ -22,72 +22,24 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-<<<<<<< HEAD
-<<<<<<< Updated upstream
-      - name: Create and start virtual environment
-=======
       - name: Install dependencies (optional)
->>>>>>> Stashed changes
-=======
-      # Install dependencies (for optional tests / sanity checks)
-      - name: Install dependencies
->>>>>>> d00f88c561325231bab46d40b886346929be86df
         run: |
           python -m venv venv
           source venv/bin/activate
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-<<<<<<< HEAD
-<<<<<<< Updated upstream
-        
-      - name: Run tests (optional)
-=======
 
       - name: Ensure startup script is executable
         run: chmod +x startup.sh
 
       # Optional sanity checks (won't fail deploy)
       - name: Django check (optional)
->>>>>>> Stashed changes
-=======
-
-      # Make sure your startup script is executable in the deployed package
-      - name: Ensure startup script is executable
-        run: chmod +x startup.sh
-
-      # Optional: run Django checks/tests (do not fail deployment if tests fail)
-      # Adjust working-directory if manage.py is not inside ./timber_locator
-      - name: Django system check (optional)
->>>>>>> d00f88c561325231bab46d40b886346929be86df
         working-directory: ./timber_locator
         run: |
           source ../venv/bin/activate
           python manage.py check
         continue-on-error: true
 
-<<<<<<< HEAD
-<<<<<<< Updated upstream
-      - name: Collect static files
-=======
-      - name: Django tests (optional)
->>>>>>> d00f88c561325231bab46d40b886346929be86df
-        working-directory: ./timber_locator
-        run: |
-          source ../venv/bin/activate
-          python manage.py test
-        continue-on-error: true
-
-<<<<<<< HEAD
-      - name: Upload artifact for deployment jobs
-=======
-=======
-      # IMPORTANT:
-      # Do NOT run collectstatic here if your app needs Azure env vars to run it
-      # (you already run collectstatic in startup.sh).
-      # Also, do NOT exclude staticfiles from the artifact if you want to ship it.
-      #
-      # The biggest fix: deploy a ZIP, not "package: ."
->>>>>>> d00f88c561325231bab46d40b886346929be86df
       - name: Create deployment zip
         run: |
           zip -r app.zip . \
@@ -95,10 +47,6 @@ jobs:
                "**/*.sqlite3" "**/db.sqlite3" "**/django.log"
 
       - name: Upload zip artifact
-<<<<<<< HEAD
->>>>>>> Stashed changes
-=======
->>>>>>> d00f88c561325231bab46d40b886346929be86df
         uses: actions/upload-artifact@v4
         with:
           name: python-app
@@ -115,31 +63,7 @@ jobs:
         with:
           name: python-app
 
-<<<<<<< HEAD
-<<<<<<< Updated upstream
-      - name: 'Deploy to Azure Web App'
-=======
-      # If you do NOT have a deployment slot named "Production",
-      # remove slot-name lines completely (recommended).
-      - name: Set startup command
-        uses: Azure/appservice-settings@v1
-        with:
-          app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
-          app-settings-json: |
-            [
-              {
-                "name": "WEBSITES_STARTUP_COMMAND",
-                "value": "bash startup.sh"
-              }
-            ]
-
       - name: Deploy to Azure Web App (zip deploy)
->>>>>>> d00f88c561325231bab46d40b886346929be86df
-        id: deploy-to-webapp
-=======
-      - name: Deploy to Azure Web App (zip deploy)
->>>>>>> Stashed changes
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
