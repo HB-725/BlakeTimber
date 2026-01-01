@@ -9,6 +9,7 @@ urlpatterns = [
     path('profile/<int:pk>/empty/', views.profile_empty, name='profile-empty'),
     path('product/<int:pk>/',  views.ProductDetail.as_view(),  name='product-detail'),
     path('search-page/',       views.SearchPage.as_view(),    name='search-page'),
+    path('tools/specrite/',    views.SpecRiteCalculatorPage.as_view(), name='specrite-calculator'),
     path('search/',            views.search_products, name='search-products'),
     path('add/category/',      views.add_category, name='add-category'),
     path('add/profile/',       views.add_profile, name='add-profile'),

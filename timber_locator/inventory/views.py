@@ -376,6 +376,15 @@ class SearchPage(TemplateView):
     template_name = 'inventory/SearchPage.html'
 
 
+class SpecRiteCalculatorPage(TemplateView):
+    template_name = "inventory/SpecRiteCalculator.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["calculator_url"] = "https://www.calculateadeck.com.au/"
+        return context
+
+
 def enter_admin_mode(request):
     if request.user.is_authenticated:
         request.session['admin_mode'] = True

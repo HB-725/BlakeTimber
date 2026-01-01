@@ -10,15 +10,30 @@
         <p class="text-slate-500 text-sm leading-relaxed">Select a tool below to estimate materials will be need.</p>
       </div>
       <div class="space-y-4">
-        <a class="block group" href="#">
+        <a class="block group" href="{% url 'specrite-calculator' %}">
           <div
             class="bg-white rounded-xl p-5 flex items-center gap-4 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] border border-transparent hover:border-primary/30 transition-all active:scale-[0.98]">
             <div class="shrink-0 w-12 h-12 rounded-lg bg-green-50 text-primary flex items-center justify-center">
               <span class="material-symbols-outlined text-[24px]">deck</span>
             </div>
             <div class="flex-1 min-w-0">
-              <h3 class="text-[17px] font-bold text-slate-900 truncate">Decking Calculator</h3>
-              <p class="text-xs text-slate-500 truncate mt-0.5">Boards, joists, screws &amp; fixings</p>
+              <h3 class="text-[17px] font-bold text-slate-900 truncate">SpecRite Calculator</h3>
+              <p class="text-xs text-slate-500 truncate mt-0.5">Merbau deckings coverage & fixings</p>
+            </div>
+            <div class="shrink-0 text-slate-300 group-hover:text-primary transition-colors">
+              <span class="material-symbols-outlined">chevron_right</span>
+            </div>
+          </div>
+        </a>
+        <a class="block group" href="#">
+          <div
+            class="bg-white rounded-xl p-5 flex items-center gap-4 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] border border-transparent hover:border-primary/30 transition-all active:scale-[0.98]">
+            <div class="shrink-0 w-12 h-12 rounded-lg bg-green-50 text-primary flex items-center justify-center">
+              <span class="material-symbols-outlined text-[24px]">grid_view</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="text-[17px] font-bold text-slate-900 truncate">Ekodeck Calculator</h3>
+              <p class="text-xs text-slate-500 truncate mt-0.5">Composite board coverage &amp; fixings</p>
             </div>
             <div class="shrink-0 text-slate-300 group-hover:text-primary transition-colors">
               <span class="material-symbols-outlined">chevron_right</span>
