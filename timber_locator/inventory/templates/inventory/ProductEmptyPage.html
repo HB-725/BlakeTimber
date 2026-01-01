@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>{{ profile.name }} - New Product</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+    rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#166534",
+            "primary-dark": "#14532d",
+            "primary-light": "#dcfce7",
+            "background-light": "#f4f4f5",
+            "background-dark": "#101622",
+          },
+          fontFamily: {
+            "display": ["Inter", "sans-serif"]
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "2xl": "1rem",
+            "3xl": "1.5rem",
+            "full": "9999px"
+          }
+        },
+      },
+    }
+  </script>
+</head>
+
+<body
+  class="font-display bg-background-light dark:bg-background-dark text-slate-900 dark:text-white antialiased transition-colors duration-200">
+  <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden pb-8">
+
+    {% include "inventory/_header.html" %}
+
+    {% if user.is_authenticated and request.session.admin_mode %}
+    <div class="border-b border-amber-200 bg-amber-100/80 px-4 py-2">
+      <div class="flex items-center justify-center gap-2 text-amber-800 text-xs font-bold uppercase tracking-wider">
+        <span class="material-symbols-outlined text-[16px]">admin_panel_settings</span>
+        Admin Mode
+      </div>
+    </div>
+    {% endif %}
+
+    {% include "inventory/_breadcrumb.html" %}
+
+    <main class="flex-1 w-full max-w-2xl mx-auto px-4">
+      <section
+        class="bg-white dark:bg-slate-900 rounded-3xl p-5 shadow-sm border border-slate-200 dark:border-slate-800">
+        <div class="flex items-center gap-4">
+          <div
+            class="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-light text-primary">
+            <span class="material-symbols-outlined text-[24px]">inventory_2</span>
+          </div>
+          <div>
+            <h2 class="text-lg font-bold text-slate-900 dark:text-white">{{ profile.name }}</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400">{{ profile.category.name }}</p>
+          </div>
+        </div>
+        <p class="mt-4 text-sm text-slate-500 dark:text-slate-400">
+          This profile doesn't have any products yet.
+        </p>
+        {% if can_add_product %}
+        <a href="{% url 'add-product' %}?profile={{ profile.id }}"
+          class="mt-5 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-dark">
+          <span class="material-symbols-outlined text-[18px]">add</span>
+          Create first product
+        </a>
+        {% endif %}
+      </section>
+    </main>
+  </div>
+</body>
+
+</html>

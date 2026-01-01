@@ -1,7 +1,7 @@
 # inventory/views.py
 from django.views.generic import ListView, DetailView, TemplateView
 from django.shortcuts import get_object_or_404, redirect, render
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.db.models import Q
 from django.contrib.auth import authenticate, login, logout
 from django.views.decorators.http import require_POST
@@ -88,16 +88,13 @@ class CategoryDetail(DetailView):
 
 class ProfileDetail(DetailView):
     model = Profile
-    
+
     def get(self, request, *args, **kwargs):
         profile = get_object_or_404(Profile, pk=kwargs['pk'])
-        # Get the first product for this profile
         first_product = profile.product_set.first()
         if first_product:
             return redirect('product-detail', pk=first_product.pk)
-        else:
-            # If no products exist, redirect back to category
-            return redirect('category-detail', slug=profile.category.slug)
+        return redirect('profile-empty', pk=profile.pk)
 
 class ProductDetail(DetailView):
     model = Product
@@ -105,7 +102,7 @@ class ProductDetail(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
+
         # Get all products with the same classification (either profile-based or category-based)
         if self.object.profile:
             # If this product has a profile, get all products with the same profile
@@ -121,6 +118,10 @@ class ProductDetail(DetailView):
 
         context['all_products'] = list(all_products)
         context['all_products_count'] = len(context['all_products'])
+        category = self.object.profile.category if self.object.profile else self.object.category
+        context['breadcrumb_category'] = category
+        context['breadcrumb_profile'] = self.object.profile
+        context['breadcrumb_option'] = self.object.get_dimension_display()
         return context
 
 
@@ -236,6 +237,141 @@ def add_product(request):
     })
 
 
+def modal_clear(request):
+    return HttpResponse("")
+
+
+def _redirect_or_htmx(request, fallback_url):
+    target = request.headers.get("HX-Current-URL") or request.META.get("HTTP_REFERER") or fallback_url
+    if request.headers.get("HX-Request"):
+        response = HttpResponse("")
+        response["HX-Redirect"] = target
+        return response
+    return redirect(target)
+
+
+def edit_category(request, pk):
+    if not _admin_mode_allowed(request):
+        return redirect("home-page")
+
+    category = get_object_or_404(Category, pk=pk)
+    if request.method == "POST":
+        form = CategoryForm(request.POST, request.FILES, instance=category)
+        if form.is_valid():
+            form.save()
+            return _redirect_or_htmx(request, reverse("category-detail", kwargs={"slug": category.slug}))
+    else:
+        form = CategoryForm(instance=category)
+
+    return render(request, "inventory/_modal_form.html", {
+        "title": "Edit category",
+        "form": form,
+        "post_url": reverse("edit-category", kwargs={"pk": category.pk}),
+        "cancel_url": reverse("modal-clear"),
+        "submit_label": "Save",
+    })
+
+
+def delete_category(request, pk):
+    if not _admin_mode_allowed(request):
+        return redirect("home-page")
+
+    category = get_object_or_404(Category, pk=pk)
+    if request.method == "POST":
+        category.delete()
+        return _redirect_or_htmx(request, reverse("home-page"))
+
+    return render(request, "inventory/_modal_confirm_delete.html", {
+        "title": "Delete category",
+        "object_label": category.name,
+        "post_url": reverse("delete-category", kwargs={"pk": category.pk}),
+        "cancel_url": reverse("modal-clear"),
+        "warning": "Deleting a category will also remove its profiles, products, and subcategories.",
+    })
+
+
+def edit_profile(request, pk):
+    if not _admin_mode_allowed(request):
+        return redirect("home-page")
+
+    profile = get_object_or_404(Profile, pk=pk)
+    if request.method == "POST":
+        form = ProfileForm(request.POST, request.FILES, instance=profile)
+        if form.is_valid():
+            form.save()
+            return _redirect_or_htmx(request, reverse("category-detail", kwargs={"slug": profile.category.slug}))
+    else:
+        form = ProfileForm(instance=profile)
+
+    return render(request, "inventory/_modal_form.html", {
+        "title": "Edit profile",
+        "form": form,
+        "post_url": reverse("edit-profile", kwargs={"pk": profile.pk}),
+        "cancel_url": reverse("modal-clear"),
+        "submit_label": "Save",
+    })
+
+
+def delete_profile(request, pk):
+    if not _admin_mode_allowed(request):
+        return redirect("home-page")
+
+    profile = get_object_or_404(Profile, pk=pk)
+    if request.method == "POST":
+        category_slug = profile.category.slug
+        profile.delete()
+        return _redirect_or_htmx(request, reverse("category-detail", kwargs={"slug": category_slug}))
+
+    return render(request, "inventory/_modal_confirm_delete.html", {
+        "title": "Delete profile",
+        "object_label": profile.name,
+        "post_url": reverse("delete-profile", kwargs={"pk": profile.pk}),
+        "cancel_url": reverse("modal-clear"),
+        "warning": "Deleting a profile will also remove its linked products.",
+    })
+
+
+def edit_product(request, pk):
+    if not _admin_mode_allowed(request):
+        return redirect("home-page")
+
+    product = get_object_or_404(Product, pk=pk)
+    if request.method == "POST":
+        form = ProductForm(request.POST, request.FILES, instance=product)
+        if form.is_valid():
+            form.save()
+            return _redirect_or_htmx(request, reverse("product-detail", kwargs={"pk": product.pk}))
+    else:
+        form = ProductForm(instance=product)
+
+    return render(request, "inventory/_modal_form.html", {
+        "title": "Edit product",
+        "form": form,
+        "post_url": reverse("edit-product", kwargs={"pk": product.pk}),
+        "cancel_url": reverse("modal-clear"),
+        "submit_label": "Save",
+    })
+
+
+def delete_product(request, pk):
+    if not _admin_mode_allowed(request):
+        return redirect("home-page")
+
+    product = get_object_or_404(Product, pk=pk)
+    if request.method == "POST":
+        category = product.get_category()
+        redirect_target = reverse("category-detail", kwargs={"slug": category.slug}) if category else reverse("home-page")
+        product.delete()
+        return _redirect_or_htmx(request, redirect_target)
+
+    return render(request, "inventory/_modal_confirm_delete.html", {
+        "title": "Delete product",
+        "object_label": product.get_name(),
+        "post_url": reverse("delete-product", kwargs={"pk": product.pk}),
+        "cancel_url": reverse("modal-clear"),
+    })
+
+
 class SearchPage(TemplateView):
     template_name = 'inventory/SearchPage.html'
 
@@ -250,6 +386,16 @@ def exit_admin_mode(request):
     if 'admin_mode' in request.session:
         del request.session['admin_mode']
     return redirect('home-page')
+
+
+def profile_empty(request, pk):
+    profile = get_object_or_404(Profile, pk=pk)
+    return render(request, "inventory/ProductEmptyPage.html", {
+        "profile": profile,
+        "breadcrumb_category": profile.category,
+        "breadcrumb_profile": profile,
+        "can_add_product": _admin_mode_allowed(request),
+    })
 
 
 @require_POST
@@ -267,11 +413,6 @@ def ajax_login(request):
 def ajax_logout(request):
     logout(request)
     return JsonResponse({'ok': True})
-
-
-@require_POST
-
-
 
 
 def search_products(request):

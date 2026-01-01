@@ -1,0 +1,33 @@
+<div class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4 py-6 backdrop-blur-sm">
+  <div class="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
+    <div class="flex items-center justify-between">
+      <h3 class="text-lg font-bold text-slate-900">{{ title }}</h3>
+      <button type="button"
+        class="flex h-9 w-9 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+        hx-get="{{ cancel_url }}" hx-target="#modal-root" hx-swap="innerHTML">
+        <span class="material-symbols-outlined text-[18px]">close</span>
+      </button>
+    </div>
+
+    <p class="mt-3 text-sm text-slate-600">
+      Are you sure you want to delete <span class="font-semibold text-slate-900">{{ object_label }}</span>?
+    </p>
+    {% if warning %}
+      <p class="mt-2 text-xs text-rose-600">{{ warning }}</p>
+    {% endif %}
+
+    <form class="mt-5 flex items-center justify-end gap-3" method="post" action="{{ post_url }}"
+      hx-post="{{ post_url }}" hx-target="#modal-root" hx-swap="innerHTML">
+      {% csrf_token %}
+      <button type="button"
+        class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+        hx-get="{{ cancel_url }}" hx-target="#modal-root" hx-swap="innerHTML">
+        Cancel
+      </button>
+      <button type="submit"
+        class="rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-rose-700">
+        Delete
+      </button>
+    </form>
+  </div>
+</div>

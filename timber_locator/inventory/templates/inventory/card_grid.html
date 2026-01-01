@@ -1,20 +1,39 @@
 {# Reusable card grid component for categories #}
 <div class="grid grid-cols-2 gap-4 pb-6">
     {% for category in items %}
-    <a href="{% url 'category-detail' slug=category.slug %}"
-        class="group relative flex flex-col overflow-hidden rounded-xl bg-white dark:bg-[#1e2736] shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 transition-all hover:shadow-md hover:ring-primary/50 dark:hover:ring-primary/50 active:scale-[0.98]">
-        <div class="aspect-[3/2] w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
-            {% if category.get_display_image %}
-            <div class="h-full w-full bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
-                style="background-image: url('{{ category.get_display_image }}');"></div>
-            {% else %}
-            <div class="h-full w-full bg-cover bg-center transition-transform duration-500 group-hover:scale-110"></div>
-            {% endif %}
+    <div
+        class="group relative flex flex-col overflow-hidden rounded-xl bg-white dark:bg-[#1e2736] shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 transition-all hover:shadow-md hover:ring-primary/50 dark:hover:ring-primary/50">
+        <a href="{% url 'category-detail' slug=category.slug %}"
+            class="relative z-0 flex flex-1 flex-col active:scale-[0.98]">
+            <div class="aspect-[3/2] w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
+                {% if category.get_display_image %}
+                <div class="h-full w-full bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
+                    style="background-image: url('{{ category.get_display_image }}');"></div>
+                {% else %}
+                <div class="h-full w-full bg-cover bg-center transition-transform duration-500 group-hover:scale-110"></div>
+                {% endif %}
+            </div>
+            <div class="flex flex-1 flex-col justify-center p-3">
+                <span class="text-sm font-bold leading-tight text-slate-900 dark:text-white">{{ category.name }}</span>
+            </div>
+        </a>
+        {% if user.is_authenticated and request.session.admin_mode %}
+        <div class="absolute right-2 top-2 z-10 flex gap-2">
+            <button type="button"
+                class="flex h-9 w-9 items-center justify-center rounded-full bg-white text-slate-700 shadow-sm ring-1 ring-slate-200 hover:text-primary hover:ring-primary/40"
+                hx-get="{% url 'edit-category' category.id %}" hx-target="#modal-root" hx-swap="innerHTML"
+                aria-label="Edit category">
+                <span class="material-symbols-outlined text-[18px]">edit</span>
+            </button>
+            <button type="button"
+                class="flex h-9 w-9 items-center justify-center rounded-full bg-white text-rose-600 shadow-sm ring-1 ring-slate-200 hover:ring-rose-300"
+                hx-get="{% url 'delete-category' category.id %}" hx-target="#modal-root" hx-swap="innerHTML"
+                aria-label="Delete category">
+                <span class="material-symbols-outlined text-[18px]">delete</span>
+            </button>
         </div>
-        <div class="flex flex-1 flex-col justify-center p-3">
-            <span class="text-sm font-bold leading-tight text-slate-900 dark:text-white">{{ category.name }}</span>
-        </div>
-    </a>
+        {% endif %}
+    </div>
     {% endfor %}
     {% if user.is_authenticated and request.session.admin_mode %}
     <a href="{% url 'add-category' %}"

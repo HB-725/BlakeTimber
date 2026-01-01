@@ -1,0 +1,51 @@
+<div class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4 py-6 backdrop-blur-sm">
+  <div class="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
+    <div class="flex items-center justify-between">
+      <h3 class="text-lg font-bold text-slate-900">{{ title }}</h3>
+      <button type="button"
+        class="flex h-9 w-9 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+        hx-get="{{ cancel_url }}" hx-target="#modal-root" hx-swap="innerHTML">
+        <span class="material-symbols-outlined text-[18px]">close</span>
+      </button>
+    </div>
+
+    <form class="mt-4 space-y-4" method="post" action="{{ post_url }}" enctype="multipart/form-data"
+      hx-post="{{ post_url }}" hx-target="#modal-root" hx-swap="innerHTML" hx-encoding="multipart/form-data">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div class="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      {% for field in form %}
+        {% if field.is_hidden %}
+          {{ field }}
+        {% else %}
+          <div class="space-y-1">
+            <label class="text-xs font-semibold uppercase tracking-wider text-slate-500">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}
+              <div class="text-xs text-slate-400">{{ field.help_text }}</div>
+            {% endif %}
+            {% for error in field.errors %}
+              <div class="text-xs text-rose-600">{{ error }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endfor %}
+
+      <div class="flex items-center justify-end gap-3 pt-2">
+        <button type="button"
+          class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+          hx-get="{{ cancel_url }}" hx-target="#modal-root" hx-swap="innerHTML">
+          Cancel
+        </button>
+        <button type="submit"
+          class="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-dark">
+          {{ submit_label|default:"Save" }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
