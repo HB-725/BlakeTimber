@@ -1,0 +1,69 @@
+<div data-search-overlay
+  class="hidden fixed inset-0 z-[40] bg-background-light text-slate-900 font-display antialiased">
+  <div class="relative flex min-h-screen w-full flex-col mx-auto max-w-2xl bg-background-light overflow-hidden pb-[96px]">
+    <header class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+      <div class="flex items-center px-4 py-3 gap-3">
+        <button type="button" data-search-close
+          class="flex items-center justify-center text-slate-500 hover:text-primary transition-colors">
+          <span class="material-symbols-outlined text-2xl">arrow_back_ios_new</span>
+        </button>
+        <div class="flex-1 relative">
+          <input id="search-input"
+            class="w-full rounded-xl bg-white h-12 border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary text-base font-medium text-slate-900 placeholder:text-slate-400 px-4 pr-10"
+            placeholder="Search..." type="text" autocomplete="off" />
+          <button id="clear-search" type="button"
+            class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center text-slate-400 hover:text-slate-600">
+            <span class="material-symbols-outlined text-[20px] fill-1">cancel</span>
+          </button>
+        </div>
+      </div>
+      <div class="px-4 pb-3">
+        <div class="flex space-x-2 overflow-x-auto no-scrollbar">
+          <button data-filter="all"
+            class="shrink-0 rounded-lg bg-primary text-white px-4 py-2 text-[11px] font-semibold tracking-wide uppercase transition-transform active:scale-95 shadow-md shadow-primary/20">
+            All Results
+          </button>
+          <button data-filter="products"
+            class="shrink-0 rounded-lg bg-white text-slate-600 border border-slate-200 px-4 py-2 text-[11px] font-semibold tracking-wide uppercase hover:border-primary/50 hover:text-primary transition-colors active:bg-slate-50">
+            Products
+          </button>
+          <button data-filter="profiles"
+            class="shrink-0 rounded-lg bg-white text-slate-600 border border-slate-200 px-4 py-2 text-[11px] font-semibold tracking-wide uppercase hover:border-primary/50 hover:text-primary transition-colors active:bg-slate-50">
+            Profiles
+          </button>
+          <button data-filter="categories"
+            class="shrink-0 rounded-lg bg-white text-slate-600 border border-slate-200 px-4 py-2 text-[11px] font-semibold tracking-wide uppercase hover:border-primary/50 hover:text-primary transition-colors active:bg-slate-50">
+            Categories
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1 overflow-y-auto w-full p-4 space-y-6">
+      <div id="search-empty" class="text-sm text-slate-400">Type at least 2 characters to search.</div>
+
+      <section id="profiles-section" class="hidden">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-slate-800 text-sm font-bold uppercase tracking-wider">Matching Profiles</h3>
+        </div>
+        <div id="profiles-list" class="flex space-x-3 overflow-x-auto no-scrollbar pb-1 -mx-4 px-4"></div>
+      </section>
+
+      <section id="categories-section" class="hidden">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-slate-800 text-sm font-bold uppercase tracking-wider">Categories</h3>
+        </div>
+        <div id="categories-list" class="grid grid-cols-2 gap-3"></div>
+      </section>
+
+      <section id="products-section" class="hidden">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-slate-800 text-sm font-bold uppercase tracking-wider">Products</h3>
+          <span id="products-count"
+            class="bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full">0 Found</span>
+        </div>
+        <div id="products-list" class="flex flex-col gap-3"></div>
+      </section>
+    </main>
+  </div>
+</div>

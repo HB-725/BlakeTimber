@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="flex-grow-1">
                                 <div class="fw-semibold text-dark">${product.name}${optionText}</div>
                                 <div class="small text-muted">
-                                    I/N: ${product.in_number} • $${product.price}${noteText}
+                                    I/N: ${product.in_number}${noteText}
                                 </div>
                                 <div class="small text-secondary">${product.category}</div>
                             </div>
