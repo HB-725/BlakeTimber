@@ -106,6 +106,7 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "inventory.middleware.ProxyHeaderDebugMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -217,8 +218,11 @@ else:
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Security settings (safe defaults in production).
+# Azure App Service already enforces HTTPS; avoid redirect loops at the app level.
 SECURE_SSL_REDIRECT = (
-    not DEBUG and os.environ.get("DJANGO_SECURE_SSL_REDIRECT", "True") == "True"
+    False
+    if IN_AZURE
+    else (not DEBUG and os.environ.get("DJANGO_SECURE_SSL_REDIRECT", "True") == "True")
 )
 SESSION_COOKIE_SECURE = (
     not DEBUG and os.environ.get("DJANGO_SESSION_COOKIE_SECURE", "True") == "True"
