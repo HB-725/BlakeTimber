@@ -105,8 +105,10 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 MIDDLEWARE = [
-    "django.middleware.security.SecurityMiddleware",
+    "inventory.middleware.ProxyHeaderNormalizeMiddleware",
     "inventory.middleware.ProxyHeaderDebugMiddleware",
+    "inventory.middleware.AllowAzureProbesMiddleware",
+    "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",

@@ -65,7 +65,11 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Security settings
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-SECURE_SSL_REDIRECT = True
+SECURE_SSL_REDIRECT = (
+    os.environ.get("DJANGO_SECURE_SSL_REDIRECT", "False") == "True"
+    if os.environ.get("WEBSITE_HOSTNAME")
+    else True
+)
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 SECURE_BROWSER_XSS_FILTER = True
