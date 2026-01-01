@@ -1,40 +1,41 @@
 import os
-import re
 from pathlib import Path
-
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+# App Service provides WEBSITE_HOSTNAME when running in Azure.
+AZURE_HOSTNAME = os.environ.get("WEBSITE_HOSTNAME")
+IN_AZURE = bool(AZURE_HOSTNAME)
+
+
+def _split_env_list(name):
+    raw = os.environ.get(name, "")
+    return [item.strip() for item in raw.split(",") if item.strip()]
+
+
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'your-secret-key-here')
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "your-secret-key-here")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
+DEBUG = os.environ.get("DJANGO_DEBUG", "False" if IN_AZURE else "True") == "True"
 
 
-SECURE_SSL_REDIRECT = os.environ.get("DJANGO_SECURE_SSL_REDIRECT", "True") == "True"
-SESSION_COOKIE_SECURE = os.environ.get("DJANGO_SESSION_COOKIE_SECURE", "True") == "True"
-CSRF_COOKIE_SECURE = os.environ.get("DJANGO_CSRF_COOKIE_SECURE", "True") == "True"
+ALLOWED_HOSTS = _split_env_list("DJANGO_ALLOWED_HOSTS")
+if not ALLOWED_HOSTS:
+    ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]", "blaketimber.com", "www.blaketimber.com"]
+    if AZURE_HOSTNAME:
+        ALLOWED_HOSTS.append(AZURE_HOSTNAME)
 
-
-AZURE_HOSTNAME = os.environ.get("WEBSITE_HOSTNAME")  # e.g. blaketimber-xxxx.azurewebsites.net
-
-ALLOWED_HOSTS = ["*"]
-
-
-# Remove None if WEBSITE_HOSTNAME isn't set (local)
-ALLOWED_HOSTS = [h for h in ALLOWED_HOSTS if h]
-
-CSRF_TRUSTED_ORIGINS = [
-    "https://www.blaketimber.com",
-    "https://blaketimber.com",
-    f"https://{os.environ.get('WEBSITE_HOSTNAME')}",
-]
-CSRF_TRUSTED_ORIGINS = [o for o in CSRF_TRUSTED_ORIGINS if o and "None" not in o]
-
-
+CSRF_TRUSTED_ORIGINS = _split_env_list("DJANGO_CSRF_TRUSTED_ORIGINS")
+if not CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS = [
+        "https://www.blaketimber.com",
+        "https://blaketimber.com",
+    ]
+    if AZURE_HOSTNAME:
+        CSRF_TRUSTED_ORIGINS.append(f"https://{AZURE_HOSTNAME}")
 
 # Logging configuration
 LOGGING = {
@@ -105,7 +106,6 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "inventory.middleware.AllowAzureProbesMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -114,7 +114,6 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
-
 
 ROOT_URLCONF = "timber_locator.urls"
 
@@ -146,11 +145,10 @@ WSGI_APPLICATION = "timber_locator.wsgi.application"
 # On Azure Linux App Service, /home is persistent storage.
 AZURE_HOME = "/home/site"
 
-SQLITE_PATH = os.environ.get("SQLITE_PATH")  # set in Azure
-if SQLITE_PATH:
-    DB_NAME = SQLITE_PATH
-else:
-    DB_NAME = str(BASE_DIR / "db.sqlite3")  # local default
+SQLITE_PATH = os.environ.get("SQLITE_PATH")
+if not SQLITE_PATH and IN_AZURE:
+    SQLITE_PATH = f"{AZURE_HOME}/db.sqlite3"
+DB_NAME = SQLITE_PATH or str(BASE_DIR / "db.sqlite3")  # local default
 
 DATABASES = {
     "default": {
@@ -205,7 +203,12 @@ STATIC_ROOT = os.environ.get("STATIC_ROOT") or os.path.join(BASE_DIR, "staticfil
 
 # Media files
 MEDIA_URL = "/media/"
-MEDIA_ROOT = os.environ.get("MEDIA_ROOT") or (BASE_DIR / "media")
+if os.environ.get("MEDIA_ROOT"):
+    MEDIA_ROOT = Path(os.environ["MEDIA_ROOT"])
+elif IN_AZURE:
+    MEDIA_ROOT = Path(f"{AZURE_HOME}/media")
+else:
+    MEDIA_ROOT = BASE_DIR / "media"
 
 
 # Default primary key field type
@@ -213,7 +216,13 @@ MEDIA_ROOT = os.environ.get("MEDIA_ROOT") or (BASE_DIR / "media")
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Auth redirects for in-app admin login/logout.
-LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/'
-
+# Security settings (safe defaults in production).
+SECURE_SSL_REDIRECT = (
+    not DEBUG and os.environ.get("DJANGO_SECURE_SSL_REDIRECT", "True") == "True"
+)
+SESSION_COOKIE_SECURE = (
+    not DEBUG and os.environ.get("DJANGO_SESSION_COOKIE_SECURE", "True") == "True"
+)
+CSRF_COOKIE_SECURE = (
+    not DEBUG and os.environ.get("DJANGO_CSRF_COOKIE_SECURE", "True") == "True"
+)
