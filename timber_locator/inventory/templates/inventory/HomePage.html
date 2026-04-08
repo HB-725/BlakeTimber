@@ -97,20 +97,22 @@
   <nav
     class="fixed bottom-0 left-0 right-0 z-50 h-[80px] border-t border-slate-200 dark:border-slate-800 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md safe-area-bottom">
     <div class="grid h-16 grid-cols-3 items-center">
-      <a class="group flex flex-col items-center justify-center gap-1.5 px-2 py-1 text-primary" href="#" data-nav-home>
+      {% with active_nav=active_nav|default:"home" %}
+      <a class="group flex flex-col items-center justify-center gap-1.5 px-2 py-1 {% if active_nav == 'home' %}text-primary{% else %}text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors{% endif %}" href="{% url 'home-page' %}" data-nav-home>
         <i class="fas fa-home text-[20px]"></i>
         <span class="text-[11px] font-semibold">Home</span>
       </a>
-      <a class="group flex flex-col items-center justify-center gap-1.5 px-2 py-1 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
+      <a class="group flex flex-col items-center justify-center gap-1.5 px-2 py-1 {% if active_nav == 'tool' %}text-primary{% else %}text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white{% endif %} transition-colors"
         href="#" data-tool-open data-nav-tool>
         <i class="fas fa-wrench text-[20px] group-hover:scale-110 transition-transform"></i>
         <span class="text-[11px] font-medium">Tool</span>
       </a>
-      <a class="group flex flex-col items-center justify-center gap-1.5 px-2 py-1 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
+      <a class="group flex flex-col items-center justify-center gap-1.5 px-2 py-1 {% if active_nav == 'manage' %}text-primary{% else %}text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white{% endif %} transition-colors"
         href="#" data-manage-open data-nav-manage>
         <i class="fas fa-cog text-[20px] group-hover:scale-110 transition-transform"></i>
         <span class="text-[11px] font-medium">Manage</span>
       </a>
+      {% endwith %}
     </div>
   </nav>
   {% endif %}

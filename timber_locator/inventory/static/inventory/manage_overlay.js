@@ -54,8 +54,22 @@ document.addEventListener("DOMContentLoaded", function () {
 
   if (navHome) {
     navHome.addEventListener("click", function (event) {
+      var manageOpen = overlay && !overlay.classList.contains("hidden");
+      var toolOpen = toolOverlay && !toolOverlay.classList.contains("hidden");
+      var searchOpen = searchOverlay && !searchOverlay.classList.contains("hidden");
+      if (!(manageOpen || toolOpen || searchOpen)) {
+        return;
+      }
       event.preventDefault();
-      overlay.classList.add("hidden");
+      if (overlay) {
+        overlay.classList.add("hidden");
+      }
+      if (toolOverlay) {
+        toolOverlay.classList.add("hidden");
+      }
+      if (searchOverlay) {
+        searchOverlay.classList.add("hidden");
+      }
       document.body.classList.remove("overflow-hidden");
       setActiveNav(false);
     });

@@ -382,6 +382,37 @@ class SpecRiteCalculatorPage(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["calculator_url"] = "https://www.calculateadeck.com.au/"
+        context["active_nav"] = "tool"
+        return context
+
+
+class EkodeckCalculatorPage(TemplateView):
+    template_name = "inventory/EkodeckCalculator.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["calculator_url"] = "https://www.ekodeck.com.au/resources/deck-calculator/"
+        context["active_nav"] = "tool"
+        return context
+
+
+class FencingCalculatorPage(TemplateView):
+    template_name = "inventory/FencingCalculator.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["calculator_url"] = "https://www.atpine.com.au/fence-calculator/"
+        context["active_nav"] = "tool"
+        return context
+
+
+class ConcreteCalculatorPage(TemplateView):
+    template_name = "inventory/ConcreteCalculator.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["calculator_url"] = "https://dingocement.com.au/concrete-calculator/"
+        context["active_nav"] = "tool"
         return context
 
 
@@ -615,3 +646,7 @@ def search_products(request):
             for category in categories
         ],
     })
+
+
+class OfflinePage(TemplateView):
+    template_name = 'inventory/offline.html'

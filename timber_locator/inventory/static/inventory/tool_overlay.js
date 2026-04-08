@@ -40,8 +40,22 @@ document.addEventListener("DOMContentLoaded", function () {
 
   if (navHome) {
     navHome.addEventListener("click", function (event) {
+      var toolOpen = overlay && !overlay.classList.contains("hidden");
+      var manageOpen = manageOverlay && !manageOverlay.classList.contains("hidden");
+      var searchOpen = searchOverlay && !searchOverlay.classList.contains("hidden");
+      if (!(toolOpen || manageOpen || searchOpen)) {
+        return;
+      }
       event.preventDefault();
-      overlay.classList.add("hidden");
+      if (overlay) {
+        overlay.classList.add("hidden");
+      }
+      if (manageOverlay) {
+        manageOverlay.classList.add("hidden");
+      }
+      if (searchOverlay) {
+        searchOverlay.classList.add("hidden");
+      }
       document.body.classList.remove("overflow-hidden");
       setActiveNav(false);
     });

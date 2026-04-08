@@ -276,6 +276,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
   if (navHome) {
     navHome.addEventListener("click", function (event) {
+      var searchOpen = overlay && !overlay.classList.contains("hidden");
+      var manageOpen = manageOverlay && !manageOverlay.classList.contains("hidden");
+      var toolOpen = toolOverlay && !toolOverlay.classList.contains("hidden");
+      if (!(searchOpen || manageOpen || toolOpen)) {
+        return;
+      }
       event.preventDefault();
       closeSearchOverlay();
       if (manageOverlay) {
